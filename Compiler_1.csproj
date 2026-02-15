@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Views\Images\copy.png" />
+    <None Remove="Views\Images\create.png" />
+    <None Remove="Views\Images\cut.png" />
+    <None Remove="Views\Images\exclamation.png" />
+    <None Remove="Views\Images\folder.png" />
+    <None Remove="Views\Images\insert.png" />
+    <None Remove="Views\Images\left-arrow.png" />
+    <None Remove="Views\Images\play.png" />
+    <None Remove="Views\Images\question.png" />
+    <None Remove="Views\Images\right-arrow.png" />
+    <None Remove="Views\Images\save.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Views\Images\copy.png" />
+    <Resource Include="Views\Images\create.png" />
+    <Resource Include="Views\Images\cut.png" />
+    <Resource Include="Views\Images\exclamation.png" />
+    <Resource Include="Views\Images\folder.png" />
+    <Resource Include="Views\Images\insert.png" />
+    <Resource Include="Views\Images\left-arrow.png" />
+    <Resource Include="Views\Images\play.png" />
+    <Resource Include="Views\Images\question.png" />
+    <Resource Include="Views\Images\right-arrow.png" />
+    <Resource Include="Views\Images\save.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Extensions\" />
+    <Folder Include="Services\" />
+  </ItemGroup>
+
+</Project>

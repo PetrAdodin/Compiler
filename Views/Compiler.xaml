@@ -1,0 +1,154 @@
+﻿<Window x:Class="Compiler_1.Views.Compiler"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Compiler_1.Views"
+        mc:Ignorable="d"
+        Title="Compiler" Height="650" Width="800" MinHeight="450" MinWidth="480">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="Файл">
+                <MenuItem Header="Создать" Click="Create_Click"/>
+                <MenuItem Header="Открыть" Click="Open_Click"/>
+                <MenuItem Header="Сохранить" Click="Save_Click"/>
+                <MenuItem Header="Сохранить как" Click="SaveAs_Click"/>
+                <Separator/>
+                <MenuItem Header="Выход" Click="Exit_Click"/>
+            </MenuItem>
+
+            <MenuItem Header="Правка">
+                <MenuItem Header="Отменить" Command="ApplicationCommands.Undo"/>
+                <MenuItem Header="Повторить" Command="ApplicationCommands.Redo"/>
+                <Separator/>
+                <MenuItem Header="Вырезать" Command="ApplicationCommands.Cut"/>
+                <MenuItem Header="Копировать" Command="ApplicationCommands.Copy"/>
+                <MenuItem Header="Вставить" Command="ApplicationCommands.Paste"/>
+                <MenuItem Header="Удалить" Command="EditingCommands.Delete"/>
+                <Separator/>
+                <MenuItem Header="Выделить все" Command="ApplicationCommands.SelectAll"/>
+            </MenuItem>
+
+            <MenuItem Header="Текст">
+                <MenuItem Header="Постановка задачи"/>
+                <MenuItem Header="Грамматика"/>
+                <MenuItem Header="Классификация грамматики"/>
+                <MenuItem Header="Метод анализа"/>
+                <MenuItem Header="Тестовый пример"/>
+                <MenuItem Header="Список литературы"/>
+                <MenuItem Header="Исходный код программы"/>
+            </MenuItem>
+
+            <MenuItem Header="Пуск"/>
+
+            <MenuItem Header="Справка">
+                <MenuItem Header="Вызов справки" Click="Reference_Click"/>
+                <Separator/>
+                <MenuItem Header="О программе" Click="About_Click"/>
+            </MenuItem>
+
+            <MenuItem Header="Вид"/>
+        </Menu>
+
+        <ToolBarTray DockPanel.Dock="Top">
+            <ToolBar>
+                <Button ToolTip="Создать" Click="Create_Click">
+                    <Image Source="/Views/Images/create.png" Width="32" Height="32"/>
+                </Button>
+                <Button ToolTip="Открыть" Click="Open_Click">
+                    <Image Source="/Views/Images/folder.png" Width="32" Height="32"/>
+                </Button>
+                <Button ToolTip="Сохранить" Click="Save_Click">
+                    <Image Source="/Views/Images/save.png" Width="32" Height="32"/>
+                </Button>
+                <Separator/>
+                <Button ToolTip="Назад" Command="ApplicationCommands.Undo">
+                    <Image Source="/Views/Images/left-arrow.png" Width="32" Height="32"/>
+                </Button>
+                <Button ToolTip="Вперед" Command="ApplicationCommands.Redo">
+                    <Image Source="/Views/Images/right-arrow.png" Width="32" Height="32"/>
+                </Button>
+                <Separator/>
+                <Button ToolTip="Копировать" Command="ApplicationCommands.Copy">
+                    <Image Source="/Views/Images/copy.png" Width="32" Height="32"/>
+                </Button>
+                <Button ToolTip="Вырезать" Command="ApplicationCommands.Cut">
+                    <Image Source="/Views/Images/cut.png" Width="32" Height="32"/>
+                </Button>
+                <Button ToolTip="Вставить" Command="ApplicationCommands.Paste">
+                    <Image Source="/Views/Images/insert.png" Width="32" Height="32"/>
+                </Button>
+                <Separator/>
+                <Button ToolTip="Пуск">
+                    <Image Source="/Views/Images/play.png" Width="32" Height="32"/>
+                </Button>
+                <Button ToolTip="Вызов справки" Click="Reference_Click">
+                    <Image Source="/Views/Images/question.png" Width="32" Height="32"/>
+                </Button>
+                <Button ToolTip="О программе" Click="About_Click">
+                    <Image Source="/Views/Images/exclamation.png" Width="32" Height="32"/>
+                </Button>
+            </ToolBar>
+        </ToolBarTray>
+
+        <Grid DockPanel.Dock="Bottom" Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="1*"/>
+            </Grid.RowDefinitions>
+
+            <GroupBox Grid.Row="0" Header="Файл" Margin="0,0,0,2">
+                <RichTextBox 
+                    x:Name="FileContentViewer"
+                    TextChanged="FileContentViewer_TextChanged"
+                    Background="White"
+                    BorderBrush="#FFABADB3" 
+                    BorderThickness="1"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Auto"
+                    Padding="5"
+                    FontFamily="Consolas"
+                    FontSize="12">
+
+                    <FlowDocument 
+                        LineHeight="10" 
+                        LineStackingStrategy="BlockLineHeight"
+                        PagePadding="0">
+                        <Paragraph 
+                            Margin="0,0,0,0" 
+                            Padding="1">
+                            <Run Text="print ('Hello world!')"/>
+                        </Paragraph>
+                    </FlowDocument>
+                </RichTextBox>
+            </GroupBox>
+
+            <!-- Сплиттер для изменения размера окон -->
+            <GridSplitter Grid.Row="1"
+                         Height="5"
+                         HorizontalAlignment="Stretch"
+                         VerticalAlignment="Center"
+                         Background="#FFABADB3"
+                         ShowsPreview="True"
+                         ResizeBehavior="PreviousAndNext"/>
+
+            <GroupBox Grid.Row="2" Header="Вывод" Margin="0,2,0,0">
+                <DataGrid 
+                    x:Name="OutputDataGrid"
+                    AutoGenerateColumns="True"
+                    CanUserAddRows="False"
+                    CanUserDeleteRows="False"
+                    IsReadOnly="True"
+                    Background="White"
+                    BorderBrush="#FFABADB3"
+                    BorderThickness="1"
+                    RowHeaderWidth="0"
+                    GridLinesVisibility="Horizontal"
+                    AlternatingRowBackground="#FFF5F5F5"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Auto"/>
+            </GroupBox>
+        </Grid>
+    </DockPanel>
+</Window>

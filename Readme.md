@@ -47,12 +47,12 @@
 Сохранять - через Сохранить или Сохранить как.
 Если просто нажать Сохранить для нового файла, откроется диалог сохранения.
 
-https://github.com/user-attachments/assets/3fe378b2-3a0c-4550-ab67-7bfabe798de9
-https://github.com/user-attachments/assets/8bc28155-9872-40fc-b589-0473a58696fe
-https://github.com/user-attachments/assets/974180c9-4d1a-48a9-aae5-9313543af4c3
-https://github.com/user-attachments/assets/1dbabe0d-c633-4a2b-86cf-04ec4a754938
-https://github.com/user-attachments/assets/8c53e324-1c73-4507-ad65-601fb7d300e3
-https://github.com/user-attachments/assets/d491f1a4-9f1e-4233-8abf-26ccfd704a07
+![скрин1](https://github.com/user-attachments/assets/3fe378b2-3a0c-4550-ab67-7bfabe798de9)
+![скрин2](https://github.com/user-attachments/assets/8bc28155-9872-40fc-b589-0473a58696fe)
+![скрин3](https://github.com/user-attachments/assets/974180c9-4d1a-48a9-aae5-9313543af4c3)
+![скрин4](https://github.com/user-attachments/assets/1dbabe0d-c633-4a2b-86cf-04ec4a754938)
+![скрин5](https://github.com/user-attachments/assets/8c53e324-1c73-4507-ad65-601fb7d300e3)
+![скрин6](https://github.com/user-attachments/assets/d491f1a4-9f1e-4233-8abf-26ccfd704a07)
 
 
 

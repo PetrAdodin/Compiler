@@ -8,8 +8,8 @@
 # Сведения об авторе
 
 Студент: Адодин Петр
-Группа: АП-327
 
+Группа: АП-327
 # Постановка задачи
 
 Разработать лексический анализатор (сканер) в соответствии с индивидуальным вариантом задания, интегрировать его в приложение из лабораторной работы №1 и обеспечить наглядный вывод результатов.
@@ -17,11 +17,16 @@
 # Вариант задания
 
 Номер варианта: 66
+
 Текстовое описание: Объявление перечисления на языке C++
+
 Примеры корректного ввода строк:
-	1. enum class Day { Monday, Tuesday, Wednesday };
-	2. enum class Cars {Toyota,Honda,Nissan};
-	3. enum class Numbers {One, Two,Three, Four};
+
+1. enum class Day { Monday, Tuesday, Wednesday };
+
+2. enum class Cars {Toyota,Honda,Nissan};
+
+3. enum class Numbers {One, Two,Three, Four};
 
 Допустимые лексемы представлены на скриншоте ниже в соответствующей таблице:
 ![таблица допустимых лексем|224](https://github.com/user-attachments/assets/8abb1202-316e-4b45-9e57-650c10a342ab)
@@ -43,12 +48,14 @@
 #### Пример 1 (корректный ввод):
 
 Входные данные: enum class Day { Monday, Tuesday, Wednesday };
+
 Выходные данные:
 ![таблица выходных данных 1](https://github.com/user-attachments/assets/be60cdd4-e19f-4c61-a26a-fc2ec2f58a0d)
 
 #### Пример 2 (строка с недопустимым символом):
 
 Входные данные: enum class Day { Monday, @Tuesday, Wednesday };
+
 Выходные данные:
 ![таблица выходных данных 2](https://github.com/user-attachments/assets/35bead09-3ab5-4b06-8e68-11933a9d9769)
 
@@ -60,5 +67,6 @@ enum class Day {
     Tuesday,
     Wednesday
 };
+
 Выходные данные:
 ![таблица выходных данных 3](https://github.com/user-attachments/assets/087e3345-e44e-447d-9a5b-0515f2f2ca7a)

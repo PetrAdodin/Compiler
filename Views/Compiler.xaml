@@ -39,7 +39,7 @@
                 <MenuItem Header="Исходный код программы"/>
             </MenuItem>
 
-            <MenuItem Header="Пуск"/>
+            <MenuItem Header="Пуск" Click="Run_Click"/>
 
             <MenuItem Header="Справка">
                 <MenuItem Header="Вызов справки" Click="Reference_Click"/>
@@ -79,7 +79,7 @@
                     <Image Source="/Views/Images/insert.png" Width="32" Height="32"/>
                 </Button>
                 <Separator/>
-                <Button ToolTip="Пуск">
+                <Button ToolTip="Пуск" Click="Run_Click">
                     <Image Source="/Views/Images/play.png" Width="32" Height="32"/>
                 </Button>
                 <Button ToolTip="Вызов справки" Click="Reference_Click">
@@ -136,7 +136,7 @@
             <GroupBox Grid.Row="2" Header="Вывод" Margin="0,2,0,0">
                 <DataGrid 
                     x:Name="OutputDataGrid"
-                    AutoGenerateColumns="True"
+                    AutoGenerateColumns="False"
                     CanUserAddRows="False"
                     CanUserDeleteRows="False"
                     IsReadOnly="True"
@@ -147,7 +147,15 @@
                     GridLinesVisibility="Horizontal"
                     AlternatingRowBackground="#FFF5F5F5"
                     VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Auto"/>
+                    HorizontalScrollBarVisibility="Auto"
+                    MouseDoubleClick="OutputDataGrid_MouseDoubleClick">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Условный код" Binding="{Binding Code}" Width="80"/>
+                        <DataGridTextColumn Header="Тип лексемы" Binding="{Binding Type}" Width="150"/>
+                        <DataGridTextColumn Header="Лексема" Binding="{Binding Lexeme}" Width="150"/>
+                        <DataGridTextColumn Header="Местоположение" Binding="{Binding Location}" Width="200"/>
+                    </DataGrid.Columns>
+                </DataGrid>
             </GroupBox>
         </Grid>
     </DockPanel>

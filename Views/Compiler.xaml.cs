@@ -1,11 +1,13 @@
 ﻿using System.IO;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
+using Compiler_1.Services;
 using Microsoft.Win32;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Media;
 
 namespace Compiler_1.Views
 {
@@ -18,12 +20,23 @@ namespace Compiler_1.Views
         {
             InitializeComponent();
             UpdateWindowTitle();
+
+            SetInitialText();
         }
 
-        // Кнопка создать
+        private void SetInitialText()
+        {
+            Paragraph paragraph = new Paragraph();
+            paragraph.Inlines.Add(new Run("enum class Day { Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday };"));
+            FileContentViewer.Document.Blocks.Clear();
+            FileContentViewer.Document.Blocks.Add(paragraph);
+            _isFileModified = false;
+            UpdateWindowTitle();
+        }
+
+        // Создать новый файл
         private void Create_Click(object sender, RoutedEventArgs e)
         {
-            // Создание нового файла
             if (_isFileModified)
             {
                 MessageBoxResult result = MessageBox.Show(
@@ -42,15 +55,11 @@ namespace Compiler_1.Views
                 }
             }
 
-            // Очищаем содержимое
-            FileContentViewer.Document.Blocks.Clear();
-
-            _isFileModified = false;
+            SetInitialText();
             _currentFilePath = string.Empty;
-            UpdateWindowTitle();
         }
 
-        // Кнопка открыть
+        // Открыть файл
         private void Open_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -61,11 +70,9 @@ namespace Compiler_1.Views
             {
                 try
                 {
-                    // Загружаем файл
                     TextRange textRange = new TextRange(
                         FileContentViewer.Document.ContentStart,
-                        FileContentViewer.Document.ContentEnd
-                    );
+                        FileContentViewer.Document.ContentEnd);
 
                     using (FileStream fs = new FileStream(openFileDialog.FileName, FileMode.Open))
                     {
@@ -90,31 +97,24 @@ namespace Compiler_1.Views
             }
         }
 
-        // Кнопка сохранить
+        // Сохранить
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            // Если файл не был сохранен ранее, вызываем SaveAs
             if (string.IsNullOrEmpty(_currentFilePath))
-            {
                 SaveAs_Click(sender, e);
-            }
             else
-            {
                 SaveToFile(_currentFilePath);
-            }
         }
 
-        // Кнопка сохранить как
+        // Сохранить как
         private void SaveAs_Click(object sender, RoutedEventArgs e)
         {
-            // Создаем диалог сохранения файла
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "RTF Files (*.rtf)|*.rtf|Text Files (*.txt)|*.txt";
             saveFileDialog.DefaultExt = "rtf";
             saveFileDialog.AddExtension = true;
-            saveFileDialog.FilterIndex = 1; // RTF выбран по умолчанию
+            saveFileDialog.FilterIndex = 1;
 
-            // Устанавливаем начальную директорию и имя файла
             if (!string.IsNullOrEmpty(_currentFilePath))
             {
                 saveFileDialog.InitialDirectory = Path.GetDirectoryName(_currentFilePath);
@@ -123,10 +123,9 @@ namespace Compiler_1.Views
             else
             {
                 saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                saveFileDialog.FileName = "NewFile.rtf";
+                saveFileDialog.FileName = "DayEnum.rtf";
             }
 
-            // Показываем диалог и проверяем результат
             if (saveFileDialog.ShowDialog() == true)
             {
                 _currentFilePath = saveFileDialog.FileName;
@@ -134,10 +133,9 @@ namespace Compiler_1.Views
             }
         }
 
-        // Кнопка выход
+        // Выход
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
-            // Проверяем, есть ли несохраненные изменения
             if (_isFileModified)
             {
                 MessageBoxResult result = MessageBox.Show(
@@ -147,9 +145,7 @@ namespace Compiler_1.Views
                     MessageBoxImage.Question);
 
                 if (result == MessageBoxResult.Yes)
-                {
                     Application.Current.Shutdown();
-                }
             }
             else
             {
@@ -160,38 +156,168 @@ namespace Compiler_1.Views
                     MessageBoxImage.Question);
 
                 if (result == MessageBoxResult.Yes)
-                {
                     Application.Current.Shutdown();
+            }
+        }
+
+        // Справка
+        private void Reference_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(
+                "Сканер распознает лексемы из объявления enum class Day:\n\n" +
+                "Ключевые слова: enum, class\n" +
+                "Идентификаторы: Day, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday\n" +
+                "Операторы: {, }, ,, ;\n\n" +
+                "Коды лексем:\n" +
+                "1 - ключевое слово\n" +
+                "2 - идентификатор\n" +
+                "3 - оператор/пунктуация\n" +
+                "4 - разделитель (пробел)\n" +
+                "99 - ошибка",
+                "Справка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        // О программе
+        private void About_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(
+                "Сканер лексем для enum class Day\n" +
+                "Версия 1.0\n\n" +
+                "Разработано для распознавания конструкции:\n" +
+                "enum class Day { Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday };",
+                "О программе",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        // Пуск
+        private void Run_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                TextRange textRange = new TextRange(
+                    FileContentViewer.Document.ContentStart,
+                    FileContentViewer.Document.ContentEnd);
+                string code = textRange.Text;
+
+                var tokenizer = new CppTokenizer(code);
+                var tokens = tokenizer.Tokenize();
+
+                var lexemes = new List<LexemeInfo>();
+                foreach (var token in tokens)
+                {
+                    lexemes.Add(new LexemeInfo
+                    {
+                        Code = GetCode(token),
+                        Type = GetTypeDescription(token),
+                        Lexeme = token.Value,
+                        Location = $"строка {token.Line}, {token.StartColumn}-{token.EndColumn}",
+                        Line = token.Line,
+                        StartColumn = token.StartColumn,
+                        EndColumn = token.EndColumn
+                    });
+                }
+                OutputDataGrid.ItemsSource = lexemes;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при сканировании: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Получение кода лексемы
+        private int GetCode(Token token)
+        {
+            switch (token.Type)
+            {
+                case TokenType.Keyword: return 1;
+                case TokenType.Identifier: return 2;
+                case TokenType.Punctuation: return 3;
+                case TokenType.Whitespace: return 4;
+                case TokenType.Error: return 99;
+                default: return 0;
+            }
+        }
+
+        // Получение описания типа лексемы
+        private string GetTypeDescription(Token token)
+        {
+            switch (token.Type)
+            {
+                case TokenType.Keyword: return "ключевое слово";
+                case TokenType.Identifier: return "идентификатор";
+                case TokenType.Punctuation:
+                    return token.Value switch
+                    {
+                        "{" => "открывающая фигурная скобка",
+                        "}" => "закрывающая фигурная скобка",
+                        "," => "запятая",
+                        ";" => "точка с запятой",
+                        _ => "пунктуация"
+                    };
+                case TokenType.Whitespace: return "разделитель (пробел)";
+                case TokenType.Error: return "недопустимый символ";
+                default: return "неизвестно";
+            }
+        }
+
+        // Навигация к ошибке по двойному клику
+        private void OutputDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (OutputDataGrid.SelectedItem is LexemeInfo selectedLexeme)
+            {
+                if (selectedLexeme.Code == 99)
+                {
+                    TextRange textRange = new TextRange(
+                        FileContentViewer.Document.ContentStart,
+                        FileContentViewer.Document.ContentEnd);
+                    string fullText = textRange.Text;
+
+                    string[] lines = fullText.Split(new[] { "\r\n" }, StringSplitOptions.None);
+
+                    int index = 0;
+
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        var tempLine = lines[i];
+
+                        if (i < selectedLexeme.Line - 1)
+                        {
+                            index += tempLine.Length;
+                            index += 4;
+                        }
+
+                        if (i == selectedLexeme.Line - 1)
+                        {
+                            index += selectedLexeme.StartColumn;
+                            break;
+                        }
+                    }
+
+                    index += 1;
+                    TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
+
+                    if (pointer != null)
+                    {
+                        FileContentViewer.CaretPosition = pointer;
+                        FileContentViewer.Focus();
+                    }
+
                 }
             }
         }
 
-        // Кнопка справка
-        private void Reference_Click(object sender, RoutedEventArgs e)
-        {
-            Reference reference= new Reference();
-            reference.Show();
-        }
-
-        // Кнопка о программе
-        private void About_Click(object sender, RoutedEventArgs e)
-        {
-            AboutWindow aboutWindow = new AboutWindow();
-            aboutWindow.Show();
-        }
-
-        // Общий метод сохранения в файл
+        // Сохранение в файл
         private void SaveToFile(string filePath)
         {
             try
             {
-                // Получаем содержимое RichTextBox
                 TextRange textRange = new TextRange(
                     FileContentViewer.Document.ContentStart,
-                    FileContentViewer.Document.ContentEnd
-                );
+                    FileContentViewer.Document.ContentEnd);
 
-                // Проверяем, не пустой ли файл
                 if (string.IsNullOrWhiteSpace(textRange.Text))
                 {
                     MessageBoxResult result = MessageBox.Show(
@@ -204,7 +330,6 @@ namespace Compiler_1.Views
                         return;
                 }
 
-                // Сохраняем в зависимости от расширения
                 using (FileStream fs = new FileStream(filePath, FileMode.Create))
                 {
                     string extension = Path.GetExtension(filePath).ToLower();
@@ -214,7 +339,7 @@ namespace Compiler_1.Views
                     else if (extension == ".txt")
                         textRange.Save(fs, DataFormats.Text);
                     else
-                        textRange.Save(fs, DataFormats.Rtf); // По умолчанию RTF
+                        textRange.Save(fs, DataFormats.Rtf);
                 }
 
                 _isFileModified = false;
@@ -234,21 +359,22 @@ namespace Compiler_1.Views
             }
         }
 
-        // Обработка события изменение текста
+        // Изменение текста
         private void FileContentViewer_TextChanged(object sender, TextChangedEventArgs e)
         {
             TextRange textRange = new TextRange(
                 FileContentViewer.Document.ContentStart,
-                FileContentViewer.Document.ContentEnd
-            );
-
+                FileContentViewer.Document.ContentEnd);
             string text = textRange.Text.Trim();
 
             bool hasContent = !string.IsNullOrWhiteSpace(text);
 
             if (hasContent)
             {
-                if (string.IsNullOrEmpty(_currentFilePath) && text == "print ('Hello world!')")
+                if (string.IsNullOrEmpty(_currentFilePath) &&
+                    text.Contains("enum class Day") &&
+                    text.Contains("Monday") &&
+                    text.Contains("Sunday"))
                 {
                     _isFileModified = false;
                 }
@@ -269,11 +395,11 @@ namespace Compiler_1.Views
         private void UpdateWindowTitle()
         {
             string fileName = string.IsNullOrEmpty(_currentFilePath)
-                ? "NewFile"
+                ? "DayEnum"
                 : Path.GetFileName(_currentFilePath);
 
             string modifiedMarker = _isFileModified ? "*" : "";
-            this.Title = $"Compiler: {fileName}{modifiedMarker}";
+            this.Title = $"Сканер enum class Day: {fileName}{modifiedMarker}";
         }
 
         // Обработка закрытия окна

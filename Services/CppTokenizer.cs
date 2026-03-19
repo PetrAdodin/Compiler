@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Compiler_1.Services
 {
@@ -65,7 +67,8 @@ namespace Compiler_1.Services
                         if (char.IsWhiteSpace(c) && c != '\n')
                         {
                             state = State.InWhitespace;
-                            currentLexeme = c.ToString();
+                            if (tokens.Count > 0 && (tokens[tokens.Count - 1].Value == "enum" || tokens[tokens.Count - 1].Value == "class"))
+                                currentLexeme = c.ToString();
                             startLine = line;
                             startColumn = column;
                             pos++;
@@ -125,13 +128,13 @@ namespace Compiler_1.Services
                     case State.InWhitespace:
                         if (char.IsWhiteSpace(c) && c != '\n')
                         {
-                            currentLexeme += c;
                             pos++;
                             column++;
                         }
                         else
                         {
-                            tokens.Add(new Token(TokenType.Whitespace, currentLexeme, startLine, startColumn, column - 1));
+                            if (tokens[tokens.Count - 1].Value == "enum" || tokens[tokens.Count - 1].Value == "class")
+                                tokens.Add(new Token(TokenType.Whitespace, currentLexeme, startLine, startColumn, column - 1));
                             state = State.Normal;
                         }
                         break;
@@ -179,7 +182,8 @@ namespace Compiler_1.Services
             }
             else if (state == State.InWhitespace)
             {
-                tokens.Add(new Token(TokenType.Whitespace, currentLexeme, startLine, startColumn, column - 1));
+                if (tokens.Count > 0 && (tokens[tokens.Count - 1].Value == "enum" || tokens[tokens.Count - 1].Value == "class"))
+                    tokens.Add(new Token(TokenType.Whitespace, currentLexeme, startLine, startColumn, column - 1));
             }
 
             return tokens;

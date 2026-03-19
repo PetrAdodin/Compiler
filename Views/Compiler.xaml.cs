@@ -218,6 +218,9 @@ namespace Compiler_1.Views
                         StartColumn = token.StartColumn,
                         EndColumn = token.EndColumn
                     });
+
+                    if (token.Type == TokenType.Error)
+                        break;
                 }
                 OutputDataGrid.ItemsSource = lexemes;
             }

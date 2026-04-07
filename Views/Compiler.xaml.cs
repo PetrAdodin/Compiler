@@ -22,6 +22,17 @@ namespace Compiler_1.Views
             UpdateWindowTitle();
 
             SetInitialText();
+            FileContentViewer.PreviewKeyDown += RichTextBox_PreviewKeyDown;
+        }
+
+        // Отключение создания новых параграфов
+        private void RichTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                FileContentViewer.CaretPosition.InsertLineBreak();
+                e.Handled = true;
+            }
         }
 
         private void SetInitialText()
@@ -206,8 +217,44 @@ namespace Compiler_1.Views
                 var tokens = tokenizer.Tokenize();
 
                 var lexemes = new List<LexemeInfo>();
-                foreach (var token in tokens)
+
+                int i = 0;
+                while (i < tokens.Count)
                 {
+                    Token token = tokens[i];
+
+                    if (token.Type == TokenType.Error)
+                    {
+                        int startLine = token.Line;
+                        int startColumn = token.StartColumn;
+                        string errorText = token.Value;
+
+                        int j = i + 1;
+                        while (j < tokens.Count && tokens[j].Type == TokenType.Error)
+                        {
+                            errorText += tokens[j].Value;
+                            j++;
+                        }
+
+                        int endLine = tokens[j - 1].Line;
+                        int endColumn = tokens[j - 1].EndColumn;
+
+                        lexemes.Add(new LexemeInfo
+                        {
+                            Code = 99,
+                            Type = "недопустимая последовательность",
+                            Lexeme = errorText,
+                            Location = $"строка {startLine}, {startColumn}-{endColumn}",
+                            Line = startLine,
+                            StartColumn = startColumn,
+                            EndColumn = endColumn
+                        });
+
+                        i = j;
+                        continue;
+                    }
+
+                    // не ошибки
                     lexemes.Add(new LexemeInfo
                     {
                         Code = GetCode(token),
@@ -219,9 +266,9 @@ namespace Compiler_1.Views
                         EndColumn = token.EndColumn
                     });
 
-                    if (token.Type == TokenType.Error)
-                        break;
+                    i++;
                 }
+
                 OutputDataGrid.ItemsSource = lexemes;
             }
             catch (Exception ex)
@@ -271,45 +318,68 @@ namespace Compiler_1.Views
         {
             if (OutputDataGrid.SelectedItem is LexemeInfo selectedLexeme)
             {
-                if (selectedLexeme.Code == 99)
+                var content = new TextRange(FileContentViewer.Document.ContentStart, FileContentViewer.Document.ContentEnd).Text;
+                var position = FindPositionInText(content, selectedLexeme.Line, selectedLexeme.StartColumn);
+
+                if (position >= 0)
                 {
-                    TextRange textRange = new TextRange(
-                        FileContentViewer.Document.ContentStart,
-                        FileContentViewer.Document.ContentEnd);
-                    string fullText = textRange.Text;
+                    var cursorPosition = FindTextPointerByIndex(FileContentViewer.Document.ContentStart, position);
+                    if (cursorPosition is null)
+                        return;
 
-                    string[] lines = fullText.Split(new[] { "\r\n" }, StringSplitOptions.None);
-
-                    int index = 0;
-
-                    for (int i = 0; i < lines.Length; i++)
-                    {
-                        var tempLine = lines[i];
-
-                        if (i < selectedLexeme.Line - 1)
-                        {
-                            index += tempLine.Length;
-                            index += 4;
-                        }
-
-                        if (i == selectedLexeme.Line - 1)
-                        {
-                            index += selectedLexeme.StartColumn;
-                            break;
-                        }
-                    }
-
-                    index += 1;
-                    TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
-
-                    if (pointer != null)
-                    {
-                        FileContentViewer.CaretPosition = pointer;
-                        FileContentViewer.Focus();
-                    }
-
+                    FileContentViewer.CaretPosition = cursorPosition;
+                    FileContentViewer.Focus();
                 }
             }
+        }
+
+        private int FindPositionInText(string text, int line, int column)
+        {
+            int currentLine = 1;
+            int currentColumn = 1;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (currentLine == line && currentColumn == column)
+                    return i;
+
+                if (text[i] == '\n')
+                {
+                    currentLine++;
+                    currentColumn = 1;
+                }
+                else
+                    currentColumn++;
+            }
+
+            return text.Length;
+        }
+
+        private static TextPointer FindTextPointerByIndex(TextPointer start, int targetIndex)
+        {
+            TextPointer current = start;
+            int currentIndex = 0;
+
+            while (current is not null && currentIndex <= targetIndex)
+            {
+                if (current.GetPointerContext(LogicalDirection.Forward) == TextPointerContext.Text)
+                {
+                    string textRun = current.GetTextInRun(LogicalDirection.Forward);
+                    int runLength = textRun.Length + "\r\n".Length;
+
+                    if (currentIndex + runLength > targetIndex)
+                    {
+                        int offset = targetIndex - currentIndex;
+                        return current.GetPositionAtOffset(offset);
+                    }
+
+                    currentIndex += runLength;
+                }
+
+                current = current.GetNextContextPosition(LogicalDirection.Forward);
+            }
+
+            return current ?? start;
         }
 
         // Сохранение в файл

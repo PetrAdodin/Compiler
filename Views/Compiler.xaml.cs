@@ -251,7 +251,7 @@ namespace Compiler_1.Views
                         });
 
                         i = j;
-                        continue;
+                        break;
                     }
 
                     // не ошибки

@@ -8,6 +8,8 @@ using Microsoft.Win32;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
+using System.DirectoryServices;
+using System.Net;
 
 namespace Compiler_1.Views
 {
@@ -22,17 +24,6 @@ namespace Compiler_1.Views
             UpdateWindowTitle();
 
             SetInitialText();
-            FileContentViewer.PreviewKeyDown += RichTextBox_PreviewKeyDown;
-        }
-
-        // Отключение создания новых параграфов
-        private void RichTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                FileContentViewer.CaretPosition.InsertLineBreak();
-                e.Handled = true;
-            }
         }
 
         private void SetInitialText()
@@ -213,6 +204,8 @@ namespace Compiler_1.Views
                     FileContentViewer.Document.ContentEnd);
                 string code = textRange.Text;
 
+                SearchRegex(code);
+
                 var tokenizer = new CppTokenizer(code);
                 var tokens = tokenizer.Tokenize();
 
@@ -333,10 +326,30 @@ namespace Compiler_1.Views
             }
         }
 
+        private void RegexDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (RegexDataGrid.SelectedItem is RegexInfo selectedRegex)
+            {
+                var content = new TextRange(FileContentViewer.Document.ContentStart, FileContentViewer.Document.ContentEnd).Text;
+                var position = FindPositionInText(content, selectedRegex.Line, selectedRegex.StartColumn);
+
+                if (position >= 0)
+                {
+                    var cursorPosition = FindTextPointerByIndex(FileContentViewer.Document.ContentStart, position);
+                    if (cursorPosition is null)
+                        return;
+
+                    FileContentViewer.CaretPosition = cursorPosition;
+                    FileContentViewer.Focus();
+                }
+            }
+        }
+
         private int FindPositionInText(string text, int line, int column)
         {
             int currentLine = 1;
             int currentColumn = 1;
+            int countEscape = 0;
 
             for (int i = 0; i < text.Length; i++)
             {
@@ -499,5 +512,57 @@ namespace Compiler_1.Views
 
             base.OnClosing(e);
         }
+
+        private void SearchRegex(string text)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    MessageBox.Show("Текст пуст. Введите данные для поиска.", "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    RegexDataGrid.ItemsSource = null;
+                    MatchesCountTextBlock.Text = "Найдено: 0";
+                    return;
+                }
+
+                var results = new List<RegexInfo>();
+                string selected = (SearchTypeComboBox.SelectedItem as ComboBoxItem)?.Content.ToString();
+
+                switch (selected)
+                {
+                    case "Гласные буквы (кроме а/А)":
+                        results = RegexSearchService.SearchRussianVowelsExceptA(text);
+                        break;
+                    case "Ethereum-адреса":
+                        results = RegexSearchService.SearchEthereumAddresses(text);
+                        break;
+                    case "Надёжные пароли":
+                        results = RegexSearchService.SearchStrongPasswords(text);
+                        break;
+                    case "Имена пользователей":
+                        results = RegexSearchService.SearchUsername(text);
+                        break;
+                    default:
+                        break;
+                }
+
+                RegexDataGrid.ItemsSource = results;
+                MatchesCountTextBlock.Text = $"Найдено: {results?.Count ?? 0}";
+
+                if (results != null && results.Count == 0)
+                {
+                    MessageBox.Show("Совпадений не найдено.", "Результат поиска", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                MessageBox.Show($"Ошибка в регулярном выражении: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при выполнении поиска: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
     }
 }

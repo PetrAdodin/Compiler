@@ -8,8 +8,6 @@ using Microsoft.Win32;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
-using System.DirectoryServices;
-using System.Net;
 
 namespace Compiler_1.Views
 {
@@ -48,17 +46,14 @@ namespace Compiler_1.Views
                     MessageBoxImage.Question);
 
                 if (result == MessageBoxResult.Yes)
-                {
                     Save_Click(sender, e);
-                }
                 else if (result == MessageBoxResult.Cancel)
-                {
                     return;
-                }
             }
 
             SetInitialText();
             _currentFilePath = string.Empty;
+            ClearHighlights();
         }
 
         // Открыть файл
@@ -87,6 +82,8 @@ namespace Compiler_1.Views
                     _currentFilePath = openFileDialog.FileName;
                     _isFileModified = false;
                     UpdateWindowTitle();
+
+                    ClearHighlights();
 
                     MessageBox.Show($"Файл успешно загружен: {Path.GetFileName(_currentFilePath)}",
                         "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -247,7 +244,6 @@ namespace Compiler_1.Views
                         continue;
                     }
 
-                    // не ошибки
                     lexemes.Add(new LexemeInfo
                     {
                         Code = GetCode(token),
@@ -263,6 +259,8 @@ namespace Compiler_1.Views
                 }
 
                 OutputDataGrid.ItemsSource = lexemes;
+
+                UpdateHighlights();
             }
             catch (Exception ex)
             {
@@ -306,26 +304,6 @@ namespace Compiler_1.Views
             }
         }
 
-        //// Навигация к лексеме по двойному клику
-        //private void OutputDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        //{
-        //    if (OutputDataGrid.SelectedItem is LexemeInfo selectedLexeme)
-        //    {
-        //        var content = new TextRange(FileContentViewer.Document.ContentStart, FileContentViewer.Document.ContentEnd).Text;
-        //        var position = FindPositionInText(content, selectedLexeme.Line, selectedLexeme.StartColumn);
-
-        //        if (position >= 0)
-        //        {
-        //            var cursorPosition = FindTextPointerByIndex(FileContentViewer.Document.ContentStart, position);
-        //            if (cursorPosition is null)
-        //                return;
-
-        //            FileContentViewer.CaretPosition = cursorPosition;
-        //            FileContentViewer.Focus();
-        //        }
-        //    }
-        //}
-
         private void OutputDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (OutputDataGrid.SelectedItem is LexemeInfo selectedLexeme)
@@ -336,7 +314,7 @@ namespace Compiler_1.Views
 
                 string fullText = textRange.Text;
 
-                var index = FindPositionInText(fullText, selectedLexeme.Line, selectedLexeme.StartColumn);
+                var index = FindPositionInText(FileContentViewer.Document, selectedLexeme.Line, selectedLexeme.StartColumn);
 
                 TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
 
@@ -358,7 +336,7 @@ namespace Compiler_1.Views
 
                 string fullText = textRange.Text;
 
-                var index = FindPositionInText(fullText, selectedRegex.Line, selectedRegex.StartColumn);
+                var index = FindPositionInText(FileContentViewer.Document, selectedRegex.Line, selectedRegex.StartColumn);
 
                 TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
 
@@ -370,33 +348,78 @@ namespace Compiler_1.Views
             }
         }
 
-        private int FindPositionInText(string text, int line, int column)
+        private int FindPositionInText(FlowDocument document, int targetLine, int targetColumn)
         {
-            string[] lines = text.Split(new[] { "\r\n" }, StringSplitOptions.None);
+            TextPointer navigator = document.ContentStart;
 
-            int index = 0;
+            int currentLine = 1;
+            int currentColumn = 1;
 
-            for (int i = 0; i < lines.Length; i++)
+            while (navigator != null)
             {
-                var tempLine = lines[i];
-
-                if (i < line - 1)
+                if (currentLine == targetLine && currentColumn == targetColumn)
                 {
-                    index += tempLine.Length;
-                    index += 4;
+                    TextPointer corrected = navigator.GetInsertionPosition(LogicalDirection.Forward);
+                    return document.ContentStart.GetOffsetToPosition(corrected);
                 }
 
-                if (i == line - 1)
+                var context = navigator.GetPointerContext(LogicalDirection.Forward);
+
+                if (context == TextPointerContext.Text)
                 {
-                    index += column;
-                    break;
+                    string textRun = navigator.GetTextInRun(LogicalDirection.Forward);
+
+                    for (int i = 0; i < textRun.Length; i++)
+                    {
+                        if (currentLine == targetLine && currentColumn == targetColumn)
+                        {
+                            TextPointer corrected = navigator.GetInsertionPosition(LogicalDirection.Forward);
+                            return document.ContentStart.GetOffsetToPosition(corrected);
+                        }
+
+                        if (textRun[i] == '\r')
+                            continue;
+
+                        if (textRun[i] == '\n')
+                        {
+                            currentLine++;
+                            currentColumn = 1;
+                        }
+                        else
+                        {
+                            currentColumn++;
+                        }
+
+                        navigator = navigator.GetPositionAtOffset(1, LogicalDirection.Forward);
+                    }
+
+                    continue;
                 }
+
+                if (context == TextPointerContext.ElementStart &&
+                    navigator.GetAdjacentElement(LogicalDirection.Forward) is LineBreak)
+                {
+                    currentLine++;
+                    currentColumn = 1;
+
+                    navigator = navigator.GetPositionAtOffset(1, LogicalDirection.Forward);
+                    continue;
+                }
+
+                if (context == TextPointerContext.ElementEnd &&
+                    navigator.Parent is Paragraph)
+                {
+                    currentLine++;
+                    currentColumn = 1;
+                }
+
+                navigator = navigator.GetNextContextPosition(LogicalDirection.Forward);
             }
 
-            return index + 1;
+            return -1;
         }
 
-        // Сохранение в файл
+        // Сохранение в файл    
         private void SaveToFile(string filePath)
         {
             try
@@ -563,6 +586,60 @@ namespace Compiler_1.Views
             {
                 MessageBox.Show($"Ошибка при выполнении поиска: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateHighlights();
+        }
+
+        private void UpdateHighlights()
+        {
+            if (MainTabControl.SelectedItem == RegexTabItem)
+                HighlightRegex();
+            else
+                ClearHighlights();
+        }
+
+        private void HighlightRegex()
+        {
+            if (!(RegexDataGrid.ItemsSource is IEnumerable<RegexInfo> matches))
+                return;
+
+            var matchList = matches.ToList();
+            if (matchList.Count == 0)
+            {
+                ClearHighlights();
+                return;
+            }
+
+            ClearHighlights();
+
+            foreach (var currentRegex in matchList)
+            {
+                int index = FindPositionInText(FileContentViewer.Document, currentRegex.Line, currentRegex.StartColumn);
+                int lengthOfRegex = currentRegex.Value.Length;
+
+                TextPointer start = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
+                TextPointer end = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index + lengthOfRegex);
+
+                if (start != null && end != null)
+                {
+                    start = start.GetInsertionPosition(LogicalDirection.Forward);
+                    end = end.GetInsertionPosition(LogicalDirection.Forward);
+
+                    TextRange range = new TextRange(start, end);
+                    range.ApplyPropertyValue(TextElement.BackgroundProperty, Brushes.LightGreen);
+                }
+            }
+        }
+
+        private void ClearHighlights()
+        {
+            TextRange entireRange = new TextRange(
+                FileContentViewer.Document.ContentStart,
+                FileContentViewer.Document.ContentEnd);
+            entireRange.ApplyPropertyValue(TextElement.BackgroundProperty, null);
         }
 
     }

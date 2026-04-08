@@ -134,8 +134,8 @@
 
             <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="#FFABADB3" ShowsPreview="True" ResizeBehavior="PreviousAndNext"/>
 
-            <TabControl x:Name="MainTabControl" Grid.Row="3" Margin="0,2,0,0">
-                <TabItem Header="Лексемы">
+            <TabControl x:Name="MainTabControl" Grid.Row="3" Margin="0,2,0,0" SelectionChanged="MainTabControl_SelectionChanged">
+                <TabItem Header="Лексемы" x:Name="LexemeTabItem">
                     <DataGrid 
                         x:Name="OutputDataGrid"
                         AutoGenerateColumns="False"
@@ -160,7 +160,7 @@
                     </DataGrid>
                 </TabItem>
 
-                <TabItem Header="Поиск">
+                <TabItem Header="Поиск" x:Name="RegexTabItem">
                     <DataGrid 
                         x:Name="RegexDataGrid"
                         AutoGenerateColumns="False"

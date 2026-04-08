@@ -306,21 +306,43 @@ namespace Compiler_1.Views
             }
         }
 
-        // Навигация к ошибке по двойному клику
+        //// Навигация к лексеме по двойному клику
+        //private void OutputDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        //{
+        //    if (OutputDataGrid.SelectedItem is LexemeInfo selectedLexeme)
+        //    {
+        //        var content = new TextRange(FileContentViewer.Document.ContentStart, FileContentViewer.Document.ContentEnd).Text;
+        //        var position = FindPositionInText(content, selectedLexeme.Line, selectedLexeme.StartColumn);
+
+        //        if (position >= 0)
+        //        {
+        //            var cursorPosition = FindTextPointerByIndex(FileContentViewer.Document.ContentStart, position);
+        //            if (cursorPosition is null)
+        //                return;
+
+        //            FileContentViewer.CaretPosition = cursorPosition;
+        //            FileContentViewer.Focus();
+        //        }
+        //    }
+        //}
+
         private void OutputDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (OutputDataGrid.SelectedItem is LexemeInfo selectedLexeme)
             {
-                var content = new TextRange(FileContentViewer.Document.ContentStart, FileContentViewer.Document.ContentEnd).Text;
-                var position = FindPositionInText(content, selectedLexeme.Line, selectedLexeme.StartColumn);
+                TextRange textRange = new TextRange(
+                    FileContentViewer.Document.ContentStart,
+                    FileContentViewer.Document.ContentEnd);
 
-                if (position >= 0)
+                string fullText = textRange.Text;
+
+                var index = FindPositionInText(fullText, selectedLexeme.Line, selectedLexeme.StartColumn);
+
+                TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
+
+                if (pointer != null)
                 {
-                    var cursorPosition = FindTextPointerByIndex(FileContentViewer.Document.ContentStart, position);
-                    if (cursorPosition is null)
-                        return;
-
-                    FileContentViewer.CaretPosition = cursorPosition;
+                    FileContentViewer.CaretPosition = pointer;
                     FileContentViewer.Focus();
                 }
             }
@@ -330,16 +352,19 @@ namespace Compiler_1.Views
         {
             if (RegexDataGrid.SelectedItem is RegexInfo selectedRegex)
             {
-                var content = new TextRange(FileContentViewer.Document.ContentStart, FileContentViewer.Document.ContentEnd).Text;
-                var position = FindPositionInText(content, selectedRegex.Line, selectedRegex.StartColumn);
+                TextRange textRange = new TextRange(
+                    FileContentViewer.Document.ContentStart,
+                    FileContentViewer.Document.ContentEnd);
 
-                if (position >= 0)
+                string fullText = textRange.Text;
+
+                var index = FindPositionInText(fullText, selectedRegex.Line, selectedRegex.StartColumn);
+
+                TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
+
+                if (pointer != null)
                 {
-                    var cursorPosition = FindTextPointerByIndex(FileContentViewer.Document.ContentStart, position);
-                    if (cursorPosition is null)
-                        return;
-
-                    FileContentViewer.CaretPosition = cursorPosition;
+                    FileContentViewer.CaretPosition = pointer;
                     FileContentViewer.Focus();
                 }
             }
@@ -347,52 +372,28 @@ namespace Compiler_1.Views
 
         private int FindPositionInText(string text, int line, int column)
         {
-            int currentLine = 1;
-            int currentColumn = 1;
-            int countEscape = 0;
+            string[] lines = text.Split(new[] { "\r\n" }, StringSplitOptions.None);
 
-            for (int i = 0; i < text.Length; i++)
+            int index = 0;
+
+            for (int i = 0; i < lines.Length; i++)
             {
-                if (currentLine == line && currentColumn == column)
-                    return i;
+                var tempLine = lines[i];
 
-                if (text[i] == '\n')
+                if (i < line - 1)
                 {
-                    currentLine++;
-                    currentColumn = 1;
-                }
-                else
-                    currentColumn++;
-            }
-
-            return text.Length;
-        }
-
-        private static TextPointer FindTextPointerByIndex(TextPointer start, int targetIndex)
-        {
-            TextPointer current = start;
-            int currentIndex = 0;
-
-            while (current is not null && currentIndex <= targetIndex)
-            {
-                if (current.GetPointerContext(LogicalDirection.Forward) == TextPointerContext.Text)
-                {
-                    string textRun = current.GetTextInRun(LogicalDirection.Forward);
-                    int runLength = textRun.Length + "\r\n".Length;
-
-                    if (currentIndex + runLength > targetIndex)
-                    {
-                        int offset = targetIndex - currentIndex;
-                        return current.GetPositionAtOffset(offset);
-                    }
-
-                    currentIndex += runLength;
+                    index += tempLine.Length;
+                    index += 4;
                 }
 
-                current = current.GetNextContextPosition(LogicalDirection.Forward);
+                if (i == line - 1)
+                {
+                    index += column;
+                    break;
+                }
             }
 
-            return current ?? start;
+            return index + 1;
         }
 
         // Сохранение в файл

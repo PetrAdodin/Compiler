@@ -102,6 +102,6 @@
 
 Построить РВ, описывающее стандартный формат юзернейма (содержит цифры, строчные буквы, символы - и _, имеет длину от 8 до 16 знаков).\
 
-![](https://github.com/user-attachments/assets/609c4aee-10a4-40ef-9cfe-188452a569f7)
+![допзадание](https://github.com/user-attachments/assets/51fd8853-e781-453a-9878-9dcd048d5363)
 
-![](https://github.com/user-attachments/assets/51fd8853-e781-453a-9878-9dcd048d5363)
+![схемаавтомата](https://github.com/user-attachments/assets/153f8f8b-5f25-4c9f-9630-9853b75bdf79)

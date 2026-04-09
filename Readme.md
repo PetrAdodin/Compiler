@@ -104,4 +104,4 @@
 
 ![допзадание](https://github.com/user-attachments/assets/51fd8853-e781-453a-9878-9dcd048d5363)
 
-![схемаавтомата](https://github.com/user-attachments/assets/132b3f50-002b-457d-a05c-80db27f8bf9c)
+![схемаавтомата](https://github.com/user-attachments/assets/153f8f8b-5f25-4c9f-9630-9853b75bdf79)

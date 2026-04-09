@@ -21,8 +21,33 @@ namespace Compiler_1.Services
 
         public static List<RegexInfo> SearchStrongPasswords(string text)
         {
-            string pattern = @"(?=\S{12,})(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[/#?!@_$/%\^&*\-|])\S+";
-            return FindMatches(text, pattern);
+            var results = new List<RegexInfo>();
+            if (string.IsNullOrEmpty(text)) return results;
+
+            string pattern = @"(?=(\S{12,})(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[/#?!@_$/%\^&*\-|]))";
+            Regex regex = new Regex(pattern, RegexOptions.Compiled);
+            MatchCollection matches = regex.Matches(text);
+
+            foreach (Match match in matches)
+            {
+                if (match.Groups[1].Success)
+                {
+                    string value = match.Groups[1].Value;
+                    int startIndex = match.Groups[1].Index;
+                    int length = value.Length;
+                    (int line, int column) = GetLineAndColumn(text, startIndex);
+
+                    results.Add(new RegexInfo
+                    {
+                        Value = value,
+                        Line = line,
+                        StartColumn = column,
+                        EndColumn = column + length - 1,   // исправлено: ранее был абсолютный индекс
+                        Location = $"строка {line}, {column}"
+                    });
+                }
+            }
+            return results;
         }
 
         public static List<RegexInfo> SearchUsername(string text)

@@ -8,6 +8,7 @@ using Microsoft.Win32;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
+using System;
 
 namespace Compiler_1.Views
 {
@@ -34,7 +35,6 @@ namespace Compiler_1.Views
             UpdateWindowTitle();
         }
 
-        // Создать новый файл
         private void Create_Click(object sender, RoutedEventArgs e)
         {
             if (_isFileModified)
@@ -56,7 +56,6 @@ namespace Compiler_1.Views
             ClearHighlights();
         }
 
-        // Открыть файл
         private void Open_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -96,7 +95,6 @@ namespace Compiler_1.Views
             }
         }
 
-        // Сохранить
         private void Save_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrEmpty(_currentFilePath))
@@ -105,7 +103,6 @@ namespace Compiler_1.Views
                 SaveToFile(_currentFilePath);
         }
 
-        // Сохранить как
         private void SaveAs_Click(object sender, RoutedEventArgs e)
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog();
@@ -132,7 +129,6 @@ namespace Compiler_1.Views
             }
         }
 
-        // Выход
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             if (_isFileModified)
@@ -159,7 +155,6 @@ namespace Compiler_1.Views
             }
         }
 
-        // Справка
         private void Reference_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show(
@@ -178,7 +173,6 @@ namespace Compiler_1.Views
                 MessageBoxImage.Information);
         }
 
-        // О программе
         private void About_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show(
@@ -191,7 +185,6 @@ namespace Compiler_1.Views
                 MessageBoxImage.Information);
         }
 
-        // Пуск
         private void Run_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -201,8 +194,10 @@ namespace Compiler_1.Views
                     FileContentViewer.Document.ContentEnd);
                 string code = textRange.Text;
 
+                // Поиск (Regex)
                 SearchRegex(code);
 
+                // Лексический анализ
                 var tokenizer = new CppTokenizer(code);
                 var tokens = tokenizer.Tokenize();
 
@@ -260,6 +255,23 @@ namespace Compiler_1.Views
 
                 OutputDataGrid.ItemsSource = lexemes;
 
+                // Синтаксический анализ
+                var parser = new CppParser(tokens);
+                var syntaxErrors = parser.Parse();
+
+                if (syntaxErrors.Count == 0)
+                {
+                    SyntaxResultTextBlock.Text = "Синтаксический анализ пройден успешно. Ошибок не обнаружено.";
+                    SyntaxResultTextBlock.Foreground = Brushes.Green;
+                    SyntaxDataGrid.ItemsSource = null;
+                }
+                else
+                {
+                    SyntaxResultTextBlock.Text = $"Обнаружено синтаксических ошибок: {syntaxErrors.Count}";
+                    SyntaxResultTextBlock.Foreground = Brushes.Red;
+                    SyntaxDataGrid.ItemsSource = syntaxErrors;
+                }
+
                 UpdateHighlights();
             }
             catch (Exception ex)
@@ -268,7 +280,6 @@ namespace Compiler_1.Views
             }
         }
 
-        // Получение кода лексемы
         private int GetCode(Token token)
         {
             switch (token.Type)
@@ -282,7 +293,6 @@ namespace Compiler_1.Views
             }
         }
 
-        // Получение описания типа лексемы
         private string GetTypeDescription(Token token)
         {
             switch (token.Type)
@@ -308,14 +318,7 @@ namespace Compiler_1.Views
         {
             if (OutputDataGrid.SelectedItem is LexemeInfo selectedLexeme)
             {
-                TextRange textRange = new TextRange(
-                    FileContentViewer.Document.ContentStart,
-                    FileContentViewer.Document.ContentEnd);
-
-                string fullText = textRange.Text;
-
                 var index = FindPositionInText(FileContentViewer.Document, selectedLexeme.Line, selectedLexeme.StartColumn);
-
                 TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
 
                 if (pointer != null)
@@ -330,14 +333,23 @@ namespace Compiler_1.Views
         {
             if (RegexDataGrid.SelectedItem is RegexInfo selectedRegex)
             {
-                TextRange textRange = new TextRange(
-                    FileContentViewer.Document.ContentStart,
-                    FileContentViewer.Document.ContentEnd);
-
-                string fullText = textRange.Text;
-
                 var index = FindPositionInText(FileContentViewer.Document, selectedRegex.Line, selectedRegex.StartColumn);
+                TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
 
+                if (pointer != null)
+                {
+                    FileContentViewer.CaretPosition = pointer;
+                    FileContentViewer.Focus();
+                }
+            }
+        }
+
+        // Обработчик двойного клика для синтаксических ошибок
+        private void SyntaxDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (SyntaxDataGrid.SelectedItem is SyntaxError selectedError)
+            {
+                var index = FindPositionInText(FileContentViewer.Document, selectedError.Line, selectedError.StartColumn);
                 TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
 
                 if (pointer != null)
@@ -419,7 +431,6 @@ namespace Compiler_1.Views
             return -1;
         }
 
-        // Сохранение в файл    
         private void SaveToFile(string filePath)
         {
             try
@@ -469,7 +480,6 @@ namespace Compiler_1.Views
             }
         }
 
-        // Изменение текста
         private void FileContentViewer_TextChanged(object sender, TextChangedEventArgs e)
         {
             TextRange textRange = new TextRange(
@@ -501,7 +511,6 @@ namespace Compiler_1.Views
             UpdateWindowTitle();
         }
 
-        // Обновление заголовка окна
         private void UpdateWindowTitle()
         {
             string fileName = string.IsNullOrEmpty(_currentFilePath)
@@ -512,7 +521,6 @@ namespace Compiler_1.Views
             this.Title = $"Сканер enum class Day: {fileName}{modifiedMarker}";
         }
 
-        // Обработка закрытия окна
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             if (_isFileModified)
@@ -572,11 +580,6 @@ namespace Compiler_1.Views
 
                 RegexDataGrid.ItemsSource = results;
                 MatchesCountTextBlock.Text = $"Найдено: {results?.Count ?? 0}";
-
-                if (results != null && results.Count == 0)
-                {
-                    MessageBox.Show("Совпадений не найдено.", "Результат поиска", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
             }
             catch (ArgumentException ex)
             {
@@ -641,6 +644,5 @@ namespace Compiler_1.Views
                 FileContentViewer.Document.ContentEnd);
             entireRange.ApplyPropertyValue(TextElement.BackgroundProperty, null);
         }
-
     }
 }

@@ -32,7 +32,34 @@ namespace Compiler_1.Services
             _errors.Clear();
             _eofReported = false;
 
-            ParseEnumDeclaration();
+            // Если файл пуст (нет значащих токенов), просто возвращаем пустой список
+            if (_tokens.Count == 0)
+            {
+                return _errors;
+            }
+
+            while (!IsAtEnd())
+            {
+                var current = Peek();
+                // Началом enum может быть только ключевое слово "enum" или "class"
+                // (последнее используется для восстановления при пропущенном "enum")
+                if (current.Type == TokenType.Keyword &&
+                    (current.Value == "enum" || current.Value == "class"))
+                {
+                    ParseEnumDeclaration();
+                }
+                else
+                {
+                    AddError(current, "Ожидалось объявление перечисления (enum)");
+                    // Пропускаем все токены, которые не могут быть началом enum
+                    while (!IsAtEnd() &&
+                           !(Peek().Type == TokenType.Keyword &&
+                             (Peek().Value == "enum" || Peek().Value == "class")))
+                    {
+                        Advance();
+                    }
+                }
+            }
 
             return _errors;
         }
@@ -47,14 +74,7 @@ namespace Compiler_1.Services
             ParseEnumList();
 
             MatchPunctuation("}", new[] { ";" }, "закрывающая фигурная скобка '}'");
-            MatchPunctuation(";", new[] { "EOF" }, "точка с запятой ';'");
-
-            while (!IsAtEnd())
-            {
-                var current = Peek();
-                AddError(current, $"Ожидался конец файла, найден лишний символ");
-                Advance();
-            }
+            MatchPunctuation(";", new[] { "enum" }, "точка с запятой ';'");
         }
 
         private void ParseEnumList()
@@ -99,11 +119,9 @@ namespace Compiler_1.Services
                     if (_tokens.Count > 0)
                     {
                         var last = _tokens.Last();
-                        AddError("EOF", $"строка {last.Line}, столбец {last.EndColumn + 1}", $"Неожиданный конец файла. Ожидалось: {description}", last.Line, last.EndColumn + 1);
-                    }
-                    else
-                    {
-                        AddError("EOF", "строка 1, столбец 1", $"Пустой файл. Ожидалось: {description}", 1, 1);
+                        AddError("EOF", $"строка {last.Line}, столбец {last.EndColumn + 1}",
+                                 $"Неожиданный конец файла. Ожидалось: {description}",
+                                 last.Line, last.EndColumn + 1);
                     }
                     _eofReported = true;
                 }
@@ -156,7 +174,6 @@ namespace Compiler_1.Services
             }
 
             _eofReported = true;
-
             return false;
         }
 
@@ -164,7 +181,9 @@ namespace Compiler_1.Services
         {
             if (IsAtEnd())
             {
-                return _tokens.Count > 0 ? _tokens.Last() : new Token(TokenType.Error, "EOF", 1, 1, 1);
+                return _tokens.Count > 0
+                    ? _tokens.Last()
+                    : new Token(TokenType.Error, "EOF", 1, 1, 1);
             }
             return _tokens[_pos];
         }

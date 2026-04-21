@@ -26,32 +26,32 @@ namespace Compiler_1.Services
             _errors = new List<SyntaxError>();
         }
 
-        public List<SyntaxError> Parse()
+        public ParseResult Parse()
         {
             _pos = 0;
             _errors.Clear();
             _eofReported = false;
 
-            // Если файл пуст (нет значащих токенов), просто возвращаем пустой список
+            var result = new ParseResult { Errors = _errors, Declarations = new List<EnumDeclarationNode>() };
+
             if (_tokens.Count == 0)
             {
-                return _errors;
+                return result;
             }
 
             while (!IsAtEnd())
             {
                 var current = Peek();
-                // Началом enum может быть только ключевое слово "enum" или "class"
-                // (последнее используется для восстановления при пропущенном "enum")
                 if (current.Type == TokenType.Keyword &&
                     (current.Value == "enum" || current.Value == "class"))
                 {
-                    ParseEnumDeclaration();
+                    var decl = ParseEnumDeclaration();
+                    if (decl != null)
+                        result.Declarations.Add(decl);
                 }
                 else
                 {
                     AddError(current, "Ожидалось объявление перечисления (enum)");
-                    // Пропускаем все токены, которые не могут быть началом enum
                     while (!IsAtEnd() &&
                            !(Peek().Type == TokenType.Keyword &&
                              (Peek().Value == "enum" || Peek().Value == "class")))
@@ -61,28 +61,57 @@ namespace Compiler_1.Services
                 }
             }
 
-            return _errors;
+            return result;
         }
 
-        private void ParseEnumDeclaration()
+        private EnumDeclarationNode ParseEnumDeclaration()
         {
-            MatchKeyword("enum", new[] { "class", "Identifier", "{" }, "ключевое слово 'enum'");
-            MatchKeyword("class", new[] { "Identifier", "{" }, "ключевое слово 'class'");
-            MatchIdentifier(new[] { "{" }, "имя перечисления");
+            var node = new EnumDeclarationNode();
+
+            var enumToken = Peek();
+            if (MatchKeyword("enum", new[] { "class", "Identifier", "{" }, "ключевое слово 'enum'"))
+            {
+                node.Modifiers.Add("enum");
+                node.Line = enumToken.Line;
+                node.Column = enumToken.StartColumn;
+            }
+
+            var classToken = Peek();
+            if (MatchKeyword("class", new[] { "Identifier", "{" }, "ключевое слово 'class'"))
+            {
+                node.Modifiers.Add("class");
+                if (node.Line == 0) { node.Line = classToken.Line; node.Column = classToken.StartColumn; }
+            }
+
+            var idToken = Peek();
+            if (MatchIdentifier(new[] { "{" }, "имя перечисления"))
+            {
+                node.Name = idToken.Value;
+                if (node.Line == 0) { node.Line = idToken.Line; node.Column = idToken.StartColumn; }
+            }
+
             MatchPunctuation("{", new[] { "Identifier", "}", ";" }, "открывающая фигурная скобка '{'");
 
-            ParseEnumList();
+            node.Elements.AddRange(ParseEnumList());
 
             MatchPunctuation("}", new[] { ";" }, "закрывающая фигурная скобка '}'");
             MatchPunctuation(";", new[] { "enum" }, "точка с запятой ';'");
+
+            return node;
         }
 
-        private void ParseEnumList()
+        private List<EnumElementNode> ParseEnumList()
         {
-            if (IsAtEnd()) return;
-            if (Peek().Value == "}") return;
+            var elements = new List<EnumElementNode>();
 
-            MatchIdentifier(new[] { ",", "}" }, "элемент перечисления");
+            if (IsAtEnd()) return elements;
+            if (Peek().Value == "}") return elements;
+
+            var token = Peek();
+            if (MatchIdentifier(new[] { ",", "}" }, "элемент перечисления"))
+            {
+                elements.Add(new EnumElementNode { Name = token.Value, Line = token.Line, Column = token.StartColumn });
+            }
 
             while (!IsAtEnd() && Peek().Value != "}")
             {
@@ -91,8 +120,14 @@ namespace Compiler_1.Services
                 if (!IsAtEnd() && Peek().Value == "}")
                     break;
 
-                MatchIdentifier(new[] { ",", "}" }, "элемент перечисления");
+                token = Peek();
+                if (MatchIdentifier(new[] { ",", "}" }, "элемент перечисления"))
+                {
+                    elements.Add(new EnumElementNode { Name = token.Value, Line = token.Line, Column = token.StartColumn });
+                }
             }
+
+            return elements;
         }
 
         private bool MatchKeyword(string value, string[] syncValues, string description)

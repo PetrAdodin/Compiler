@@ -155,6 +155,46 @@
                         </DataGrid>
                     </Grid>
                 </TabItem>
+                <TabItem Header="Семантика" x:Name="SemanticTabItem">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="1*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="SemanticResultTextBlock" Grid.Row="0" Margin="5" FontWeight="Bold"/>
+                        <DataGrid 
+                            x:Name="SemanticDataGrid"
+                            Grid.Row="1"
+                            AutoGenerateColumns="False"
+                            CanUserAddRows="False"
+                            CanUserDeleteRows="False"
+                            IsReadOnly="True"
+                            Background="White"
+                            BorderBrush="#FFABADB3"
+                            BorderThickness="1"
+                            RowHeaderWidth="0"
+                            GridLinesVisibility="Horizontal"
+                            AlternatingRowBackground="#FFF5F5F5"
+                            VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Auto"
+                            MouseDoubleClick="SemanticDataGrid_MouseDoubleClick">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Описание ошибки" Binding="{Binding Description}" Width="500"/>
+                                <DataGridTextColumn Header="Позиция" Binding="{Binding Location}" Width="200"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="AST" x:Name="AstTabItem">
+                    <TextBox x:Name="AstTextBox" 
+                             FontFamily="Consolas" 
+                             FontSize="13" 
+                             IsReadOnly="True" 
+                             VerticalScrollBarVisibility="Auto" 
+                             HorizontalScrollBarVisibility="Auto" 
+                             Margin="5" 
+                             Background="#FAFAFA"/>
+                </TabItem>
                 <TabItem Header="Лексемы" x:Name="LexemeTabItem">
                     <DataGrid 
                         x:Name="OutputDataGrid"

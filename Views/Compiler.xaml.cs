@@ -255,9 +255,11 @@ namespace Compiler_1.Views
 
                 OutputDataGrid.ItemsSource = lexemes;
 
-                // Синтаксический анализ
+                // Синтаксический анализ + построение AST
                 var parser = new CppParser(tokens);
-                var syntaxErrors = parser.Parse();
+                var parseResult = parser.Parse();
+                var syntaxErrors = parseResult.Errors;
+                var declarations = parseResult.Declarations;
 
                 if (syntaxErrors.Count == 0)
                 {
@@ -271,6 +273,38 @@ namespace Compiler_1.Views
                     SyntaxResultTextBlock.Foreground = Brushes.Red;
                     SyntaxDataGrid.ItemsSource = syntaxErrors;
                 }
+
+                // Семантический анализ
+                var semanticAnalyzer = new SemanticAnalyzer();
+                var semanticErrors = semanticAnalyzer.Analyze(declarations);
+
+                if (semanticErrors.Count == 0)
+                {
+                    SemanticResultTextBlock.Text = "Семантический анализ пройден успешно. Ошибок не обнаружено.";
+                    SemanticResultTextBlock.Foreground = Brushes.Green;
+                    SemanticDataGrid.ItemsSource = null;
+                }
+                else
+                {
+                    SemanticResultTextBlock.Text = $"Обнаружено семантических ошибок: {semanticErrors.Count}";
+                    SemanticResultTextBlock.Foreground = Brushes.Red;
+                    SemanticDataGrid.ItemsSource = semanticErrors;
+                }
+
+                // Отрисовка текстового AST
+                var sbAst = new System.Text.StringBuilder();
+                if (declarations.Count == 0)
+                {
+                    sbAst.AppendLine("AST пусто (нет успешно распознанных конструкций).");
+                }
+                else
+                {
+                    for (int j = 0; j < declarations.Count; j++)
+                    {
+                        sbAst.AppendLine(declarations[j].Print("", j == declarations.Count - 1));
+                    }
+                }
+                AstTextBox.Text = sbAst.ToString();
 
                 UpdateHighlights();
             }
@@ -344,12 +378,26 @@ namespace Compiler_1.Views
             }
         }
 
-        // Обработчик двойного клика для синтаксических ошибок
         private void SyntaxDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (SyntaxDataGrid.SelectedItem is SyntaxError selectedError)
             {
                 var index = FindPositionInText(FileContentViewer.Document, selectedError.Line, selectedError.StartColumn);
+                TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
+
+                if (pointer != null)
+                {
+                    FileContentViewer.CaretPosition = pointer;
+                    FileContentViewer.Focus();
+                }
+            }
+        }
+
+        private void SemanticDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (SemanticDataGrid.SelectedItem is SemanticError selectedError)
+            {
+                var index = FindPositionInText(FileContentViewer.Document, selectedError.Line, selectedError.Column);
                 TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
 
                 if (pointer != null)

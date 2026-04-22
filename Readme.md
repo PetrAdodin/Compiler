@@ -25,6 +25,13 @@ enum, class, "{", "}", ",", " "
 
 # Грамматика
 
+$G = (V_T, V_N, P, S)$, где
+
+$V_T$ = {```"enum", "class", "{", "}", ",", ";", " ", "digit," "liter"```}
+
+$V_N$ = {```<START>, <KEYWORD_ENUM>, <SPACE_AFTER_ENUM>, <KEYWORD_CLASS>, <SPACE_AFTER_CLASS>, <ID>, <OPEN_BRACE>, <VALUES>, <CLOSE_BRACE>```}
+
+P ={```
 digit = "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9".  
 
 liter = "a"|"A"|"b"|"B"|"c"|"C"|"d"|"D"|"e"|"E"|"f"|"F"|"g"|"G"|"h"|"H"|"i"|"I"|"j"|"J"|"k"|"K"|"l"|"L"|"m"|"M"|"n"|"N"|"o"|"O"|"p"|"P"|"q"|"Q"|"r"|"R"|"s"|"S"|"t"|"T"|"u"|"U"|"v"|"V"|"w"|"W"|"x"|"X"|"y"|"Y"|"z"|"Z"|"_"  
@@ -38,11 +45,16 @@ liter = "a"|"A"|"b"|"B"|"c"|"C"|"d"|"D"|"e"|"E"|"f"|"F"|"g"|"G"|"h"|"H"|"i"|"I"|
 6) <ID> --> liter <ID>| digit <ID>| "{" <OPEN_BRACE>  
 7) <OPEN_BRACE> --> liter <VALUES>  
 8) <VALUES> --> liter <VALUES>| digit <VALUES>| "," <VALUES> "}" <CLOSE_BRACE>  
-9) <CLOSE_BRACE> --> ";" <END>
+9) <CLOSE_BRACE> --> ";"
 ```
+}
+
+$S$ = {```<START>```}
+
+![схема конечного автомата](https://github.com/user-attachments/assets/4c0ffd53-ed54-433b-aecb-07ebb0d76902)
 # Классификация Хомского
 
-Грамматика относится к регулярным грамматикам
+Грамматика относится к регулярным грамматикам, а именно является праволинейной. Все правила вывода $P$ имеют строгий вид: **$A \rightarrow aB$**  или  **$A \rightarrow a$** где $A, B \in V_N$ (нетерминалы), а $a \in V_T$ (терминалы).
 # Метод анализа
 
 В реализованном парсере CppParser используется метод рекурсивного спуска.
@@ -84,10 +96,10 @@ liter = "a"|"A"|"b"|"B"|"c"|"C"|"d"|"D"|"e"|"E"|"f"|"F"|"g"|"G"|"h"|"H"|"i"|"I"|
 
 Вся информация об ошибках накапливается в списке errors, который возвращается пользователю для последующего отображения в интерфейсе.
 
-![скрин1](https://github.com/user-attachments/assets/3c3b12f3-69fc-449a-8e96-c2569e7f26ed)
+![скрин1|68](https://github.com/user-attachments/assets/3c3b12f3-69fc-449a-8e96-c2569e7f26ed)
 
 ![скрин2](https://github.com/user-attachments/assets/84691a1e-e814-4681-82ad-ecc497de28f9)
 
-![скрин3](https://github.com/user-attachments/assets/8f4651c9-3ba9-4c6e-a5d4-c05c16339e35)
+![скрин3|68](https://github.com/user-attachments/assets/8f4651c9-3ba9-4c6e-a5d4-c05c16339e35)
 
 ![скрин4](https://github.com/user-attachments/assets/06f511f7-d763-4df3-8c6a-b1319dee9a61)

@@ -27,7 +27,7 @@ enum, class, "{", "}", ",", " "
 
 $G = (V_T, V_N, P, S)$, где
 
-$V_T$ = {```0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A , B , C , D , E , F , G , H , I , J , K , L , M , N , O , P , Q , R , S , T , U , V , W , X , Y , Z, _```}
+$V_T$ = {```0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A , B , C , D , E , F , G , H , I , J , K , L , M , N , O , P , Q , R , S , T , U , V , W , X , Y , Z, _, ,, ;```}
 
 $V_N$ = {```<START>, <KEYWORD_ENUM>, <SPACE_AFTER_ENUM>, <KEYWORD_CLASS>, <SPACE_AFTER_CLASS>, <ID>, <OPEN_BRACE>, <VALUES>, <CLOSE_BRACE>```}
 
@@ -51,12 +51,12 @@ $S$ = {```<START>```}
 
 # Классификация Хомского
 
-Грамматика относится к регулярным грамматикам, а именно является праволинейной. Все правила вывода $P$ имеют строгий вид: **$A \rightarrow aB$**  или  **$A \rightarrow a$** где $A, B \in V_N$ (нетерминалы), а $a \in V_T$ (терминалы).
+Грамматика относится к автоматным (регулярным) грамматикам. Все правила вывода $P$ имеют строгий вид: $G[A]: A → aB | a | Λ, a ∈ V_T, A, B ∈ V_N$
 # Метод анализа
 
 В реализованном парсере CppParser используется граф автоматной грамматики.
 
-![схема](https://github.com/user-attachments/assets/3d190eb1-0832-4041-a42b-5c6cdd796c2f)
+![схема]([https://github.com/user-attachments/assets/3d190eb1-0832-4041-a42b-5c6cdd796c2f](https://github.com/user-attachments/assets/c4eb3054-9884-4100-8920-d24339f5b48b))
 # Диагностика и нейтрализация синтаксических ошибок
 
 Парсер реализует следующие механизмы обработки ошибок:

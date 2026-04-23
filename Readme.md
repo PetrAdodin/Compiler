@@ -27,46 +27,36 @@ enum, class, "{", "}", ",", " "
 
 $G = (V_T, V_N, P, S)$, где
 
-$V_T$ = {```"enum", "class", "{", "}", ",", ";", " ", "digit," "liter"```}
+$V_T$ = {```0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A , B , C , D , E , F , G , H , I , J , K , L , M , N , O , P , Q , R , S , T , U , V , W , X , Y , Z, _```}
 
 $V_N$ = {```<START>, <KEYWORD_ENUM>, <SPACE_AFTER_ENUM>, <KEYWORD_CLASS>, <SPACE_AFTER_CLASS>, <ID>, <OPEN_BRACE>, <VALUES>, <CLOSE_BRACE>```}
 
-P ={```
-digit = "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9".  
-
-liter = "a"|"A"|"b"|"B"|"c"|"C"|"d"|"D"|"e"|"E"|"f"|"F"|"g"|"G"|"h"|"H"|"i"|"I"|"j"|"J"|"k"|"K"|"l"|"L"|"m"|"M"|"n"|"N"|"o"|"O"|"p"|"P"|"q"|"Q"|"r"|"R"|"s"|"S"|"t"|"T"|"u"|"U"|"v"|"V"|"w"|"W"|"x"|"X"|"y"|"Y"|"z"|"Z"|"_"  
-
+P ={
 ```
 1) <START> --> "enum" <KEYWORD_ENUM>  
 2) <KEYWORD_ENUM> --> " " <SPACE_AFTER_ENUM>  
 3) <SPACE_AFTER_ENUM> --> "class" <KEYWORD_CLASS>  
 4) <KEYWORD_CLASS> --> " " <SPACE_AFTER_CLASS>  
-5) <SPACE_AFTER_CLASS> --> liter <ID>  
-6) <ID> --> liter <ID>| digit <ID>| "{" <OPEN_BRACE>  
+5) <SPACE_AFTER_CLASS> --> leter <ID>  
+6) <ID> --> leter <ID>| digit <ID>| "{" <OPEN_BRACE>  
 7) <OPEN_BRACE> --> liter <VALUES>  
-8) <VALUES> --> liter <VALUES>| digit <VALUES>| "," <VALUES> "}" <CLOSE_BRACE>  
+8) <VALUES> --> leter <VALUES>| digit <VALUES>| "," <VALUES> "}" <CLOSE_BRACE>  
 9) <CLOSE_BRACE> --> ";"
+10) digit = "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
+11) leter = "a"|"A"|"b"|"B"|"c"|"C"|"d"|"D"|"e"|"E"|"f"|"F"|"g"|"G"|"h"|"H"|"i"|"I"|"j"|"J"|"k"|"K"|"l"|"L"|"m"|"M"|"n"|"N"|"o"|"O"|"p"|"P"|"q"|"Q"|"r"|"R"|"s"|"S"|"t"|"T"|"u"|"U"|"v"|"V"|"w"|"W"|"x"|"X"|"y"|"Y"|"z"|"Z"|"_"
 ```
 }
 
 $S$ = {```<START>```}
 
-![схема конечного автомата](https://github.com/user-attachments/assets/4c0ffd53-ed54-433b-aecb-07ebb0d76902)
 # Классификация Хомского
 
 Грамматика относится к регулярным грамматикам, а именно является праволинейной. Все правила вывода $P$ имеют строгий вид: **$A \rightarrow aB$**  или  **$A \rightarrow a$** где $A, B \in V_N$ (нетерминалы), а $a \in V_T$ (терминалы).
 # Метод анализа
 
-В реализованном парсере CppParser используется метод рекурсивного спуска.
+В реализованном парсере CppParser используется граф автоматной грамматики.
 
-Для каждой укрупнённой синтаксической конструкции (enum - объявления, списка значений и т.д.) написан отдельный метод, который:
-
-- последовательно вызывает функции проверки (MatchKeyword, MatchIdentifier, MatchPunctuation),
-    
-- отрабатывает рекурсию для повторяющихся элементов (например, идентификаторы через запятую)
-    
-- организует восстановление после ошибок с помощью синхронизирующих множеств
-
+![схема](https://private-user-images.githubusercontent.com/188947555/581991466-4c0ffd53-ed54-433b-aecb-07ebb0d76902.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzY5MTE3NjMsIm5iZiI6MTc3NjkxMTQ2MywicGF0aCI6Ii8xODg5NDc1NTUvNTgxOTkxNDY2LTRjMGZmZDUzLWVkNTQtNDMzYi1hZWNiLTA3ZWJiMGQ3NjkwMi5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjYwNDIzJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI2MDQyM1QwMjMxMDNaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1mYTQ0ZDIxMjhjOTg1ZmU5ODVlMDNmYTZjMmQ5YjRkN2QwYjM0MjZjZjAxNGE5OGU2YTRhOGVlOTU4ODU4NmMyJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZyZXNwb25zZS1jb250ZW50LXR5cGU9aW1hZ2UlMkZwbmcifQ.eBkIgIJig6fR20kZy-dr6L8ItJ23owfeerj7RhxRM2s)
 # Диагностика и нейтрализация синтаксических ошибок
 
 Парсер реализует следующие механизмы обработки ошибок:

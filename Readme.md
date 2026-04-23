@@ -27,7 +27,7 @@ enum, class, "{", "}", ",", " "
 
 $G = (V_T, V_N, P, S)$, где
 
-$V_T$ = {```0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A , B , C , D , E , F , G , H , I , J , K , L , M , N , O , P , Q , R , S , T , U , V , W , X , Y , Z, _, ,, ;```}
+$V_T$ = {```0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A , B , C , D , E , F , G , H , I , J , K , L , M , N , O , P , Q , R , S , T , U , V , W , X , Y , Z, _, ,, ;, }, {```}
 
 $V_N$ = {```<START>, <KEYWORD_ENUM>, <SPACE_AFTER_ENUM>, <KEYWORD_CLASS>, <SPACE_AFTER_CLASS>, <ID>, <OPEN_BRACE>, <VALUES>, <CLOSE_BRACE>```}
 
@@ -37,13 +37,13 @@ P ={
 2) <KEYWORD_ENUM> --> " " <SPACE_AFTER_ENUM>  
 3) <SPACE_AFTER_ENUM> --> "class" <KEYWORD_CLASS>  
 4) <KEYWORD_CLASS> --> " " <SPACE_AFTER_CLASS>  
-5) <SPACE_AFTER_CLASS> --> leter <ID>  
-6) <ID> --> leter <ID>| digit <ID>| "{" <OPEN_BRACE>  
-7) <OPEN_BRACE> --> liter <VALUES>  
-8) <VALUES> --> leter <VALUES>| digit <VALUES>| "," <VALUES> "}" <CLOSE_BRACE>  
+5) <SPACE_AFTER_CLASS> --> letter <ID>  
+6) <ID> --> letter <ID>| digit <ID>| "{" <OPEN_BRACE>  
+7) <OPEN_BRACE> --> letter <VALUES>  
+8) <VALUES> --> letter <VALUES>| digit <VALUES>| "," <VALUES> "}" <CLOSE_BRACE>  
 9) <CLOSE_BRACE> --> ";"
 10) digit = "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
-11) leter = "a"|"A"|"b"|"B"|"c"|"C"|"d"|"D"|"e"|"E"|"f"|"F"|"g"|"G"|"h"|"H"|"i"|"I"|"j"|"J"|"k"|"K"|"l"|"L"|"m"|"M"|"n"|"N"|"o"|"O"|"p"|"P"|"q"|"Q"|"r"|"R"|"s"|"S"|"t"|"T"|"u"|"U"|"v"|"V"|"w"|"W"|"x"|"X"|"y"|"Y"|"z"|"Z"|"_"
+11) letter = "a"|"A"|"b"|"B"|"c"|"C"|"d"|"D"|"e"|"E"|"f"|"F"|"g"|"G"|"h"|"H"|"i"|"I"|"j"|"J"|"k"|"K"|"l"|"L"|"m"|"M"|"n"|"N"|"o"|"O"|"p"|"P"|"q"|"Q"|"r"|"R"|"s"|"S"|"t"|"T"|"u"|"U"|"v"|"V"|"w"|"W"|"x"|"X"|"y"|"Y"|"z"|"Z"|"_"
 ```
 }
 

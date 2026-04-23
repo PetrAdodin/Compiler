@@ -56,7 +56,7 @@ $S$ = {```<START>```}
 
 В реализованном парсере CppParser используется граф автоматной грамматики.
 
-![схема]([https://github.com/user-attachments/assets/3d190eb1-0832-4041-a42b-5c6cdd796c2f](https://github.com/user-attachments/assets/c4eb3054-9884-4100-8920-d24339f5b48b))
+![схема](https://github.com/user-attachments/assets/9759dee5-0ccf-4d6c-bd34-efdac000d772)
 # Диагностика и нейтрализация синтаксических ошибок
 
 Парсер реализует следующие механизмы обработки ошибок:

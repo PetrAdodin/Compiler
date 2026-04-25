@@ -55,9 +55,10 @@ namespace Compiler_1.Services
                 "enum",
                 "ожидалось объявление перечисление 'enum'");
 
+            // Пытаемся восстановиться, пропуская до class или до потенциального имени перечисления
             if (!RecoverAfterMissingEnum())
             {
-                _position = _tokens.Count;
+                _position = _tokens.Count; // дальше парсить бессмысленно
             }
         }
 
@@ -131,6 +132,7 @@ namespace Compiler_1.Services
 
             bool parsedAnyEnumerator = false;
 
+            // Основной цикл: собираем перечислители через запятую, пока не упрёмся в } или конец
             while (!IsEnd)
             {
                 SkipIgnoredTokens();
@@ -226,6 +228,7 @@ namespace Compiler_1.Services
                 "ожидалась ';'");
         }
 
+        // Восстановление после пропущенного enum: ищем class или имя, за которым {/;
         private bool RecoverAfterMissingEnum()
         {
             while (!IsEnd)
@@ -255,6 +258,7 @@ namespace Compiler_1.Services
             return false;
         }
 
+        // Восстановление, когда пропущен class: ищем class или допустимое имя перечисления
         private void RecoverBeforeName()
         {
             while (!IsEnd)
@@ -296,6 +300,7 @@ namespace Compiler_1.Services
             }
         }
 
+        // Быстрая эвристика: есть ли впереди хотя бы одно ключевое слово или идентификатор
         private bool HasPlausibleDeclarationAhead(int startIndex)
         {
             for (int i = startIndex; i < _tokens.Count; i++)
@@ -312,6 +317,7 @@ namespace Compiler_1.Services
             return false;
         }
 
+        // Проверяем, не похож ли следующий токен на мусор (помогает при восстановлении)
         private bool NextLooksLikeGarbage()
         {
             if (IsEnd)

@@ -66,6 +66,7 @@ namespace Compiler_1.Services
                         if (char.IsWhiteSpace(c) && c != '\n')
                         {
                             state = State.InWhitespace;
+                            // Запоминаем пробелы только после ключевых слов – они могут пригодиться для восстановления в парсере
                             if (tokens.Count > 0 && (tokens[tokens.Count - 1].Value == "enum" || tokens[tokens.Count - 1].Value == "class"))
                                 currentLexeme = c.ToString();
                             startLine = line;

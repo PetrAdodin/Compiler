@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
 using System;
+using System.Diagnostics;
 
 namespace Compiler_1.Views
 {
@@ -21,7 +22,6 @@ namespace Compiler_1.Views
         {
             InitializeComponent();
             UpdateWindowTitle();
-
             SetInitialText();
         }
 
@@ -53,7 +53,6 @@ namespace Compiler_1.Views
 
             SetInitialText();
             _currentFilePath = string.Empty;
-            ClearHighlights();
         }
 
         private void Open_Click(object sender, RoutedEventArgs e)
@@ -81,8 +80,6 @@ namespace Compiler_1.Views
                     _currentFilePath = openFileDialog.FileName;
                     _isFileModified = false;
                     UpdateWindowTitle();
-
-                    ClearHighlights();
 
                     MessageBox.Show($"Файл успешно загружен: {Path.GetFileName(_currentFilePath)}",
                         "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -194,10 +191,6 @@ namespace Compiler_1.Views
                     FileContentViewer.Document.ContentEnd);
                 string code = textRange.Text;
 
-                // Поиск (Regex)
-                SearchRegex(code);
-
-                // Лексический анализ
                 var tokenizer = new CppTokenizer(code);
                 var tokens = tokenizer.Tokenize();
 
@@ -255,7 +248,6 @@ namespace Compiler_1.Views
 
                 OutputDataGrid.ItemsSource = lexemes;
 
-                // Синтаксический анализ
                 var parser = new CppParser(tokens);
                 var syntaxErrors = parser.Parse();
 
@@ -271,12 +263,23 @@ namespace Compiler_1.Views
                     SyntaxResultTextBlock.Foreground = Brushes.Red;
                     SyntaxDataGrid.ItemsSource = syntaxErrors;
                 }
-
-                UpdateHighlights();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка при сканировании: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void Report_Click(object sender, RoutedEventArgs e)
+        {
+            string url = "https://example.com";
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Не удалось открыть ссылку: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -329,22 +332,6 @@ namespace Compiler_1.Views
             }
         }
 
-        private void RegexDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (RegexDataGrid.SelectedItem is RegexInfo selectedRegex)
-            {
-                var index = FindPositionInText(FileContentViewer.Document, selectedRegex.Line, selectedRegex.StartColumn);
-                TextPointer pointer = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
-
-                if (pointer != null)
-                {
-                    FileContentViewer.CaretPosition = pointer;
-                    FileContentViewer.Focus();
-                }
-            }
-        }
-
-        // Обработчик двойного клика для синтаксических ошибок
         private void SyntaxDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (SyntaxDataGrid.SelectedItem is SyntaxError selectedError)
@@ -543,106 +530,6 @@ namespace Compiler_1.Views
             }
 
             base.OnClosing(e);
-        }
-
-        private void SearchRegex(string text)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(text))
-                {
-                    MessageBox.Show("Текст пуст. Введите данные для поиска.", "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    RegexDataGrid.ItemsSource = null;
-                    MatchesCountTextBlock.Text = "Найдено: 0";
-                    return;
-                }
-
-                var results = new List<RegexInfo>();
-                string selected = (SearchTypeComboBox.SelectedItem as ComboBoxItem)?.Content.ToString();
-
-                switch (selected)
-                {
-                    case "Гласные буквы (кроме а/А)":
-                        results = RegexSearchService.SearchRussianVowelsExceptA(text);
-                        break;
-                    case "Ethereum-адреса":
-                        results = RegexSearchService.SearchEthereumAddresses(text);
-                        break;
-                    case "Надёжные пароли":
-                        results = RegexSearchService.SearchStrongPasswords(text);
-                        break;
-                    case "Имена пользователей":
-                        results = RegexSearchService.SearchUsername(text);
-                        break;
-                    default:
-                        break;
-                }
-
-                RegexDataGrid.ItemsSource = results;
-                MatchesCountTextBlock.Text = $"Найдено: {results?.Count ?? 0}";
-            }
-            catch (ArgumentException ex)
-            {
-                MessageBox.Show($"Ошибка в регулярном выражении: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при выполнении поиска: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            UpdateHighlights();
-        }
-
-        private void UpdateHighlights()
-        {
-            if (MainTabControl.SelectedItem == RegexTabItem)
-                HighlightRegex();
-            else
-                ClearHighlights();
-        }
-
-        private void HighlightRegex()
-        {
-            if (!(RegexDataGrid.ItemsSource is IEnumerable<RegexInfo> matches))
-                return;
-
-            var matchList = matches.ToList();
-            if (matchList.Count == 0)
-            {
-                ClearHighlights();
-                return;
-            }
-
-            ClearHighlights();
-
-            foreach (var currentRegex in matchList)
-            {
-                int index = FindPositionInText(FileContentViewer.Document, currentRegex.Line, currentRegex.StartColumn);
-                int lengthOfRegex = currentRegex.Value.Length;
-
-                TextPointer start = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index);
-                TextPointer end = FileContentViewer.Document.ContentStart.GetPositionAtOffset(index + lengthOfRegex);
-
-                if (start != null && end != null)
-                {
-                    start = start.GetInsertionPosition(LogicalDirection.Forward);
-                    end = end.GetInsertionPosition(LogicalDirection.Forward);
-
-                    TextRange range = new TextRange(start, end);
-                    range.ApplyPropertyValue(TextElement.BackgroundProperty, Brushes.LightGreen);
-                }
-            }
-        }
-
-        private void ClearHighlights()
-        {
-            TextRange entireRange = new TextRange(
-                FileContentViewer.Document.ContentStart,
-                FileContentViewer.Document.ContentEnd);
-            entireRange.ApplyPropertyValue(TextElement.BackgroundProperty, null);
         }
     }
 }

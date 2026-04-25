@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace Compiler_1.Services
 {
@@ -133,15 +132,13 @@ namespace Compiler_1.Services
                         }
                         else
                         {
-                            if (tokens[tokens.Count - 1].Value == "enum" || tokens[tokens.Count - 1].Value == "class")
+                            if (tokens.Count > 0 && (tokens[tokens.Count - 1].Value == "enum" || tokens[tokens.Count - 1].Value == "class"))
                                 tokens.Add(new Token(TokenType.Whitespace, currentLexeme, startLine, startColumn, column - 1));
                             state = State.Normal;
                         }
                         break;
 
                     case State.InError:
-                        // В состоянии ошибки пропускаем символы до конца строки
-                        // или до появления допустимого символа
                         if (c == '\n')
                         {
                             line++;
@@ -166,7 +163,6 @@ namespace Compiler_1.Services
                 }
             }
 
-            // Добавление последнего токена
             if (state == State.InIdentifier)
             {
                 TokenType type;

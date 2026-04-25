@@ -16,7 +16,6 @@
                 <Separator/>
                 <MenuItem Header="Выход" Click="Exit_Click"/>
             </MenuItem>
-
             <MenuItem Header="Правка">
                 <MenuItem Header="Отменить" Command="ApplicationCommands.Undo"/>
                 <MenuItem Header="Повторить" Command="ApplicationCommands.Redo"/>
@@ -28,7 +27,6 @@
                 <Separator/>
                 <MenuItem Header="Выделить все" Command="ApplicationCommands.SelectAll"/>
             </MenuItem>
-
             <MenuItem Header="Текст">
                 <MenuItem Header="Постановка задачи"/>
                 <MenuItem Header="Грамматика"/>
@@ -38,18 +36,14 @@
                 <MenuItem Header="Список литературы"/>
                 <MenuItem Header="Исходный код программы"/>
             </MenuItem>
-
             <MenuItem Header="Пуск" Click="Run_Click"/>
-
             <MenuItem Header="Справка">
                 <MenuItem Header="Вызов справки" Click="Reference_Click"/>
                 <Separator/>
                 <MenuItem Header="О программе" Click="About_Click"/>
             </MenuItem>
-
             <MenuItem Header="Вид"/>
         </Menu>
-
         <ToolBarTray DockPanel.Dock="Top">
             <ToolBar>
                 <Button ToolTip="Создать" Click="Create_Click">
@@ -90,15 +84,26 @@
                 </Button>
             </ToolBar>
         </ToolBarTray>
-
         <Grid DockPanel.Dock="Bottom" Margin="5">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="1*"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="1*"/>
             </Grid.RowDefinitions>
-
-            <GroupBox Grid.Row="0" Header="Файл" Margin="0,0,0,2">
+            <Border Grid.Row="0" Margin="0,0,0,5" Padding="5" Background="#F0F0F0" BorderBrush="#ABADB3" BorderThickness="1">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Тип поиска:" VerticalAlignment="Center" Margin="5,0"/>
+                    <ComboBox x:Name="SearchTypeComboBox" Width="250" Margin="5,0" SelectedIndex="0">
+                        <ComboBoxItem Content="Гласные буквы (кроме а/А)"/>
+                        <ComboBoxItem Content="Ethereum-адреса"/>
+                        <ComboBoxItem Content="Надёжные пароли"/>
+                        <ComboBoxItem Content="Имена пользователей"/>
+                    </ComboBox>
+                    <TextBlock x:Name="MatchesCountTextBlock" Text="Найдено: 0" VerticalAlignment="Center" Margin="15,0,0,0" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+            <GroupBox Grid.Row="1" Header="Файл" Margin="0,0,0,2">
                 <RichTextBox 
                     x:Name="FileContentViewer"
                     TextChanged="FileContentViewer_TextChanged"
@@ -110,53 +115,93 @@
                     Padding="5"
                     FontFamily="Consolas"
                     FontSize="12">
-
-                    <FlowDocument 
-                        LineHeight="10" 
-                        LineStackingStrategy="BlockLineHeight"
-                        PagePadding="0">
-                        <Paragraph 
-                            Margin="0,0,0,0" 
-                            Padding="1">
-                            <Run Text="print ('Hello world!')"/>
+                    <FlowDocument LineHeight="10" LineStackingStrategy="BlockLineHeight" PagePadding="0">
+                        <Paragraph Margin="0,0,0,0" Padding="1">
+                            <Run Text="enum class Day { Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday };"/>
                         </Paragraph>
                     </FlowDocument>
                 </RichTextBox>
             </GroupBox>
-
-            <!-- Сплиттер для изменения размера окон -->
-            <GridSplitter Grid.Row="1"
-                         Height="5"
-                         HorizontalAlignment="Stretch"
-                         VerticalAlignment="Center"
-                         Background="#FFABADB3"
-                         ShowsPreview="True"
-                         ResizeBehavior="PreviousAndNext"/>
-
-            <GroupBox Grid.Row="2" Header="Вывод" Margin="0,2,0,0">
-                <DataGrid 
-                    x:Name="OutputDataGrid"
-                    AutoGenerateColumns="False"
-                    CanUserAddRows="False"
-                    CanUserDeleteRows="False"
-                    IsReadOnly="True"
-                    Background="White"
-                    BorderBrush="#FFABADB3"
-                    BorderThickness="1"
-                    RowHeaderWidth="0"
-                    GridLinesVisibility="Horizontal"
-                    AlternatingRowBackground="#FFF5F5F5"
-                    VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Auto"
-                    MouseDoubleClick="OutputDataGrid_MouseDoubleClick">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Условный код" Binding="{Binding Code}" Width="80"/>
-                        <DataGridTextColumn Header="Тип лексемы" Binding="{Binding Type}" Width="150"/>
-                        <DataGridTextColumn Header="Лексема" Binding="{Binding Lexeme}" Width="150"/>
-                        <DataGridTextColumn Header="Местоположение" Binding="{Binding Location}" Width="200"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </GroupBox>
+            <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="#FFABADB3" ShowsPreview="True" ResizeBehavior="PreviousAndNext"/>
+            <TabControl x:Name="MainTabControl" Grid.Row="3" Margin="0,2,0,0" SelectionChanged="MainTabControl_SelectionChanged">
+                <TabItem Header="Синтаксис" x:Name="SyntaxTabItem">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="1*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="SyntaxResultTextBlock" Grid.Row="0" Margin="5" FontWeight="Bold"/>
+                        <DataGrid 
+                            x:Name="SyntaxDataGrid"
+                            Grid.Row="1"
+                            AutoGenerateColumns="False"
+                            CanUserAddRows="False"
+                            CanUserDeleteRows="False"
+                            IsReadOnly="True"
+                            Background="White"
+                            BorderBrush="#FFABADB3"
+                            BorderThickness="1"
+                            RowHeaderWidth="0"
+                            GridLinesVisibility="Horizontal"
+                            AlternatingRowBackground="#FFF5F5F5"
+                            VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Auto"
+                            MouseDoubleClick="SyntaxDataGrid_MouseDoubleClick">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Неверный фрагмент" Binding="{Binding Fragment}" Width="150"/>
+                                <DataGridTextColumn Header="Местоположение" Binding="{Binding Location}" Width="150"/>
+                                <DataGridTextColumn Header="Описание ошибки" Binding="{Binding Description}" Width="400"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Лексемы" x:Name="LexemeTabItem">
+                    <DataGrid 
+                        x:Name="OutputDataGrid"
+                        AutoGenerateColumns="False"
+                        CanUserAddRows="False"
+                        CanUserDeleteRows="False"
+                        IsReadOnly="True"
+                        Background="White"
+                        BorderBrush="#FFABADB3"
+                        BorderThickness="1"
+                        RowHeaderWidth="0"
+                        GridLinesVisibility="Horizontal"
+                        AlternatingRowBackground="#FFF5F5F5"
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Auto"
+                        MouseDoubleClick="OutputDataGrid_MouseDoubleClick">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Условный код" Binding="{Binding Code}" Width="80"/>
+                            <DataGridTextColumn Header="Тип лексемы" Binding="{Binding Type}" Width="150"/>
+                            <DataGridTextColumn Header="Лексема" Binding="{Binding Lexeme}" Width="150"/>
+                            <DataGridTextColumn Header="Местоположение" Binding="{Binding Location}" Width="200"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+                <TabItem Header="Поиск" x:Name="RegexTabItem">
+                    <DataGrid 
+                        x:Name="RegexDataGrid"
+                        AutoGenerateColumns="False"
+                        CanUserAddRows="False"
+                        CanUserDeleteRows="False"
+                        IsReadOnly="True"
+                        Background="White"
+                        BorderBrush="#FFABADB3"
+                        BorderThickness="1"
+                        RowHeaderWidth="0"
+                        GridLinesVisibility="Horizontal"
+                        AlternatingRowBackground="#FFF5F5F5"
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Auto"
+                        MouseDoubleClick="RegexDataGrid_MouseDoubleClick">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Найденная подстрока" Binding="{Binding Value}" Width="250"/>
+                            <DataGridTextColumn Header="Начальная позиция" Binding="{Binding Location}" Width="150"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+            </TabControl>
         </Grid>
     </DockPanel>
 </Window>

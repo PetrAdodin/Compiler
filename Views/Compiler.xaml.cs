@@ -191,47 +191,13 @@ namespace Compiler_1.Views
                     FileContentViewer.Document.ContentEnd);
                 string code = textRange.Text;
 
-                var tokenizer = new CppTokenizer(code);
-                var tokens = tokenizer.Tokenize();
+                var lexemeTokenizer = new CppTokenizerForLexemes(code);
+                var lexemeTokens = lexemeTokenizer.Tokenize();
 
                 var lexemes = new List<LexemeInfo>();
 
-                int i = 0;
-                while (i < tokens.Count)
+                foreach (Token token in lexemeTokens)
                 {
-                    Token token = tokens[i];
-
-                    if (token.Type == TokenType.Error)
-                    {
-                        int startLine = token.Line;
-                        int startColumn = token.StartColumn;
-                        string errorText = token.Value;
-
-                        int j = i + 1;
-                        while (j < tokens.Count && tokens[j].Type == TokenType.Error)
-                        {
-                            errorText += tokens[j].Value;
-                            j++;
-                        }
-
-                        int endLine = tokens[j - 1].Line;
-                        int endColumn = tokens[j - 1].EndColumn;
-
-                        lexemes.Add(new LexemeInfo
-                        {
-                            Code = 99,
-                            Type = "недопустимая последовательность",
-                            Lexeme = errorText,
-                            Location = $"строка {startLine}, {startColumn}-{endColumn}",
-                            Line = startLine,
-                            StartColumn = startColumn,
-                            EndColumn = endColumn
-                        });
-
-                        i = j;
-                        continue;
-                    }
-
                     lexemes.Add(new LexemeInfo
                     {
                         Code = GetCode(token),
@@ -242,13 +208,14 @@ namespace Compiler_1.Views
                         StartColumn = token.StartColumn,
                         EndColumn = token.EndColumn
                     });
-
-                    i++;
                 }
 
                 OutputDataGrid.ItemsSource = lexemes;
 
-                var parser = new CppParser(tokens);
+                var syntaxTokenizer = new CppTokenizer(code);
+                var syntaxTokens = syntaxTokenizer.Tokenize();
+
+                var parser = new CppParser(syntaxTokens);
                 var syntaxErrors = parser.Parse();
 
                 if (syntaxErrors.Count == 0)
@@ -300,8 +267,10 @@ namespace Compiler_1.Views
         {
             switch (token.Type)
             {
-                case TokenType.Keyword: return "ключевое слово";
-                case TokenType.Identifier: return "идентификатор";
+                case TokenType.Keyword:
+                    return "ключевое слово";
+                case TokenType.Identifier:
+                    return "идентификатор";
                 case TokenType.Punctuation:
                     return token.Value switch
                     {
@@ -311,9 +280,14 @@ namespace Compiler_1.Views
                         ";" => "точка с запятой",
                         _ => "пунктуация"
                     };
-                case TokenType.Whitespace: return "разделитель (пробел)";
-                case TokenType.Error: return "недопустимый символ";
-                default: return "неизвестно";
+                case TokenType.Whitespace:
+                    return "разделитель (пробел)";
+                case TokenType.Error:
+                    return token.Value != null && token.Value.Length == 1
+                        ? "Недопустимый символ"
+                        : "Недопустимая последовательность";
+                default:
+                    return "неизвестно";
             }
         }
 

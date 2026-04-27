@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Compiler_1.Services
 {
@@ -8,15 +8,7 @@ namespace Compiler_1.Services
     {
         private readonly string _source;
 
-        private enum State
-        {
-            Normal,
-            InIdentifier,
-            InWhitespace,
-            InError
-        }
-
-        private static readonly HashSet<string> _keywords = new HashSet<string>
+        private static readonly HashSet<string> _keywords = new HashSet<string>(StringComparer.Ordinal)
         {
             "enum",
             "class"
@@ -27,14 +19,9 @@ namespace Compiler_1.Services
             '{', '}', ',', ';'
         };
 
-        private static bool IsValidIdentifierChar(char c)
-        {
-            return char.IsLetterOrDigit(c) || c == '_';
-        }
-
         public CppTokenizer(string source)
         {
-            _source = source;
+            _source = source ?? string.Empty;
         }
 
         public List<Token> Tokenize()
@@ -43,144 +30,122 @@ namespace Compiler_1.Services
             int pos = 0;
             int line = 1;
             int column = 1;
-            State state = State.Normal;
-            string currentLexeme = "";
-            int startLine = line, startColumn = column;
 
             while (pos < _source.Length)
             {
                 char c = _source[pos];
 
-                switch (state)
+                if (c == '\r')
                 {
-                    case State.Normal:
+                    pos++;
+                    continue;
+                }
 
-                        if (c == '\n')
-                        {
-                            line++;
-                            column = 1;
-                            pos++;
-                            continue;
-                        }
+                if (c == '\n')
+                {
+                    line++;
+                    column = 1;
+                    pos++;
+                    continue;
+                }
 
-                        if (char.IsWhiteSpace(c) && c != '\n')
-                        {
-                            state = State.InWhitespace;
-                            // Запоминаем пробелы только после ключевых слов – они могут пригодиться для восстановления в парсере
-                            if (tokens.Count > 0 && (tokens[tokens.Count - 1].Value == "enum" || tokens[tokens.Count - 1].Value == "class"))
-                                currentLexeme = c.ToString();
-                            startLine = line;
-                            startColumn = column;
-                            pos++;
-                            column++;
-                            continue;
-                        }
+                if (char.IsWhiteSpace(c))
+                {
+                    int startLine = line;
+                    int startColumn = column;
+                    var whitespace = new StringBuilder();
 
-                        if (char.IsLetter(c) || c == '_')
-                        {
-                            state = State.InIdentifier;
-                            currentLexeme = c.ToString();
-                            startLine = line;
-                            startColumn = column;
-                            pos++;
-                            column++;
-                            continue;
-                        }
+                    while (pos < _source.Length)
+                    {
+                        c = _source[pos];
 
-                        if (_punctuationChars.Contains(c))
-                        {
-                            tokens.Add(new Token(TokenType.Punctuation, c.ToString(), line, column, column));
-                            pos++;
-                            column++;
-                            continue;
-                        }
+                        if (c == '\r' || c == '\n' || !char.IsWhiteSpace(c))
+                            break;
 
-                        tokens.Add(new Token(TokenType.Error, c.ToString(), line, column, column));
+                        whitespace.Append(c);
                         pos++;
                         column++;
-                        break;
+                    }
 
-                    case State.InIdentifier:
-                        if (IsValidIdentifierChar(c))
+                    if (tokens.Count > 0)
+                    {
+                        string lastValue = tokens[tokens.Count - 1].Value;
+                        if (lastValue == "enum" || lastValue == "class")
                         {
-                            currentLexeme += c;
-                            pos++;
-                            column++;
+                            tokens.Add(new Token(TokenType.Whitespace, whitespace.ToString(), startLine, startColumn, column - 1));
                         }
-                        else
-                        {
-                            TokenType type;
+                    }
 
-                            if (_keywords.Contains(currentLexeme))
-                            {
-                                type = TokenType.Keyword;
-                            }
-                            else
-                            {
-                                type = TokenType.Identifier;
-                            }
-
-                            tokens.Add(new Token(type, currentLexeme, startLine, startColumn, column - 1));
-                            state = State.Normal;
-                        }
-                        break;
-
-                    case State.InWhitespace:
-                        if (char.IsWhiteSpace(c) && c != '\n')
-                        {
-                            pos++;
-                            column++;
-                        }
-                        else
-                        {
-                            if (tokens.Count > 0 && (tokens[tokens.Count - 1].Value == "enum" || tokens[tokens.Count - 1].Value == "class"))
-                                tokens.Add(new Token(TokenType.Whitespace, currentLexeme, startLine, startColumn, column - 1));
-                            state = State.Normal;
-                        }
-                        break;
-
-                    case State.InError:
-                        if (c == '\n')
-                        {
-                            line++;
-                            column = 1;
-                            pos++;
-                            state = State.Normal;
-                        }
-                        else if (char.IsWhiteSpace(c) && c != '\n')
-                        {
-                            state = State.Normal;
-                        }
-                        else if (char.IsLetter(c) || c == '_' || _punctuationChars.Contains(c))
-                        {
-                            state = State.Normal;
-                        }
-                        else
-                        {
-                            pos++;
-                            column++;
-                        }
-                        break;
+                    continue;
                 }
-            }
 
-            if (state == State.InIdentifier)
-            {
-                TokenType type;
-                if (_keywords.Contains(currentLexeme))
+                if (char.IsLetter(c) || c == '_')
                 {
-                    type = TokenType.Keyword;
+                    int startLine = line;
+                    int startColumn = column;
+                    var lexeme = new StringBuilder();
+                    bool invalid = false;
+
+                    while (pos < _source.Length)
+                    {
+                        c = _source[pos];
+
+                        if (c == '\r' || c == '\n' || char.IsWhiteSpace(c) || _punctuationChars.Contains(c))
+                            break;
+
+                        if (!char.IsLetterOrDigit(c) && c != '_')
+                            invalid = true;
+
+                        lexeme.Append(c);
+                        pos++;
+                        column++;
+                    }
+
+                    string value = lexeme.ToString();
+
+                    if (invalid)
+                    {
+                        tokens.Add(new Token(TokenType.Error, value, startLine, startColumn, column - 1));
+                    }
+                    else if (_keywords.Contains(value))
+                    {
+                        tokens.Add(new Token(TokenType.Keyword, value, startLine, startColumn, column - 1));
+                    }
+                    else
+                    {
+                        tokens.Add(new Token(TokenType.Identifier, value, startLine, startColumn, column - 1));
+                    }
+
+                    continue;
                 }
-                else
+
+                if (_punctuationChars.Contains(c))
                 {
-                    type = TokenType.Identifier;
+                    tokens.Add(new Token(TokenType.Punctuation, c.ToString(), line, column, column));
+                    pos++;
+                    column++;
+                    continue;
                 }
-                tokens.Add(new Token(type, currentLexeme, startLine, startColumn, column - 1));
-            }
-            else if (state == State.InWhitespace)
-            {
-                if (tokens.Count > 0 && (tokens[tokens.Count - 1].Value == "enum" || tokens[tokens.Count - 1].Value == "class"))
-                    tokens.Add(new Token(TokenType.Whitespace, currentLexeme, startLine, startColumn, column - 1));
+
+                {
+                    int startLine = line;
+                    int startColumn = column;
+                    var errorText = new StringBuilder();
+
+                    while (pos < _source.Length)
+                    {
+                        c = _source[pos];
+
+                        if (c == '\r' || c == '\n' || char.IsWhiteSpace(c) || _punctuationChars.Contains(c))
+                            break;
+
+                        errorText.Append(c);
+                        pos++;
+                        column++;
+                    }
+
+                    tokens.Add(new Token(TokenType.Error, errorText.ToString(), startLine, startColumn, column - 1));
+                }
             }
 
             return tokens;

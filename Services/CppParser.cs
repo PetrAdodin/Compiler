@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text;
 
 namespace Compiler_1.Services
 {
@@ -20,54 +20,80 @@ namespace Compiler_1.Services
             _errors.Clear();
             _position = 0;
 
-            if (!HasPlausibleDeclarationAhead(_position))
+            while (true)
             {
-                AddSyntaxError(
-                    GetCurrentOrSyntheticToken(),
-                    "enum",
-                    "ожидалось объявление перечисление 'enum'");
-                return _errors;
+                SkipIgnoredTokens();
+
+                if (IsEnd)
+                    break;
+
+                if (!HasPlausibleDeclarationAhead(_position))
+                {
+                    AddSyntaxError(
+                        GetCurrentOrSyntheticToken(),
+                        "enum",
+                        "ожидалось объявление перечисление 'enum'");
+                    break;
+                }
+
+                int before = _position;
+                ParseDeclaration();
+                SkipIgnoredTokens();
+
+                if (_position == before)
+                    Advance();
             }
 
-            ParseEnumKeyword();
+            return _errors;
+        }
+
+        private void ParseDeclaration()
+        {
+            SkipIgnoredTokens();
+
+            if (IsEnd)
+                return;
+
+            if (IsEnumKeyword(Current))
+            {
+                Advance();
+            }
+            else if (Current.Type == TokenType.Error && IsEnumLike(Current.Value))
+            {
+                AddSyntaxError(Current, "enum", "ожидалось объявление перечисление 'enum'");
+                Advance();
+            }
+            else if (Current.Type == TokenType.Error)
+            {
+                AddSyntaxError(Current, "enum", "ожидалось объявление перечисление 'enum'");
+                Advance();
+            }
+            else
+            {
+                AddSyntaxError(GetCurrentOrSyntheticToken(), "enum", "ожидалось объявление перечисление 'enum'");
+            }
+
             ParseClassKeywordOrName();
             ParseEnumName();
             ParseOpeningBrace();
             ParseEnumeratorList();
             ParseClosingBrace();
             ParseSemicolon();
-
-            return _errors;
-        }
-
-        private void ParseEnumKeyword()
-        {
-            SkipIgnoredTokens();
-
-            if (IsKeyword("enum"))
-            {
-                Advance();
-                return;
-            }
-
-            AddSyntaxError(
-                GetCurrentOrSyntheticToken(),
-                "enum",
-                "ожидалось объявление перечисление 'enum'");
-
-            // Пытаемся восстановиться, пропуская до class или до потенциального имени перечисления
-            if (!RecoverAfterMissingEnum())
-            {
-                _position = _tokens.Count; // дальше парсить бессмысленно
-            }
         }
 
         private void ParseClassKeywordOrName()
         {
             SkipIgnoredTokens();
 
-            if (IsKeyword("class"))
+            if (IsClassKeyword(Current))
             {
+                Advance();
+                return;
+            }
+
+            if (Current != null && Current.Type == TokenType.Error)
+            {
+                AddSyntaxError(Current, "class", "ожидалось ключевое слово 'class'");
                 Advance();
                 return;
             }
@@ -76,8 +102,6 @@ namespace Compiler_1.Services
                 GetCurrentOrSyntheticToken(),
                 "class",
                 "ожидалось ключевое слово 'class'");
-
-            RecoverBeforeName();
         }
 
         private void ParseEnumName()
@@ -90,15 +114,17 @@ namespace Compiler_1.Services
                 return;
             }
 
+            if (Current != null && Current.Type == TokenType.Error && IsIdentifierLike(Current.Value))
+            {
+                AddSyntaxError(Current, Current.Value, "ожидался идентификатор");
+                Advance();
+                return;
+            }
+
             AddSyntaxError(
                 GetCurrentOrSyntheticToken(),
                 GetCurrentValueOr("<identifier>"),
                 "ожидался идентификатор");
-
-            SkipUntilNameOrBrace();
-
-            if (IsIdentifier())
-                Advance();
         }
 
         private void ParseOpeningBrace()
@@ -116,10 +142,7 @@ namespace Compiler_1.Services
                 GetCurrentValueOr("{"),
                 "ожидалась '{'");
 
-            while (!IsEnd && !IsPunctuation("{"))
-                Advance();
-
-            if (IsPunctuation("{"))
+            if (Current != null && (Current.Type == TokenType.Error || (Current.Type == TokenType.Punctuation && Current.Value != "}" && Current.Value != ";")))
                 Advance();
         }
 
@@ -127,35 +150,46 @@ namespace Compiler_1.Services
         {
             SkipIgnoredTokens();
 
-            if (IsPunctuation("}"))
+            if (IsEnd || IsPunctuation("}") || IsPunctuation(";") || IsClosingParenError(Current))
                 return;
 
-            bool parsedAnyEnumerator = false;
-
-            // Основной цикл: собираем перечислители через запятую, пока не упрёмся в } или конец
             while (!IsEnd)
             {
                 SkipIgnoredTokens();
 
-                if (IsPunctuation("}"))
-                    break;
+                if (IsEnd || IsPunctuation("}") || IsPunctuation(";") || IsClosingParenError(Current))
+                    return;
 
-                if (!IsIdentifier())
+                if (IsIdentifier())
                 {
-                    if (!IsEnd && !IsPunctuation(";") && !IsPunctuation("}"))
-                    {
-                        AddSyntaxError(
-                            GetCurrentOrSyntheticToken(),
-                            GetCurrentValueOr("<enumerator>"),
-                            "ожидался элемент перечисления");
-                    }
-
                     Advance();
-                    continue;
+                }
+                else if (Current != null && Current.Type == TokenType.Error)
+                {
+                    if (IsIdentifierLike(Current.Value))
+                    {
+                        AddSyntaxError(Current, Current.Value, "ожидался элемент перечисления");
+                        Advance();
+                    }
+                    else
+                    {
+                        AddSyntaxError(Current, GetCurrentValueOr("<enumerator>"), "ожидался элемент перечисления");
+                        Advance();
+                    }
+                }
+                else
+                {
+                    AddSyntaxError(
+                        GetCurrentOrSyntheticToken(),
+                        GetCurrentValueOr("<enumerator>"),
+                        "ожидался элемент перечисления");
+
+                    if (Current != null && Current.Type == TokenType.Punctuation && Current.Value == ",")
+                        Advance();
+                    else
+                        break;
                 }
 
-                parsedAnyEnumerator = true;
-                Advance();
                 SkipIgnoredTokens();
 
                 if (IsPunctuation(","))
@@ -167,26 +201,36 @@ namespace Compiler_1.Services
                 if (IsIdentifier())
                 {
                     AddSyntaxError(
-                        GetCurrentOrSyntheticToken(),
+                        Current,
                         Current.Value,
                         "ожидалась ',' между элементами перечисления");
                     continue;
                 }
 
-                if (IsPunctuation("}"))
-                    break;
-
-                if (IsPunctuation(";"))
-                    break;
-
-                if (!IsEnd && parsedAnyEnumerator)
+                if (Current != null && Current.Type == TokenType.Error && IsIdentifierLike(Current.Value))
                 {
                     AddSyntaxError(
-                        GetCurrentOrSyntheticToken(),
-                        GetCurrentValueOr("<enumerator>"),
-                        "ожидалась ',' или '}'");
+                        Current,
+                        Current.Value,
+                        "ожидалась ',' между элементами перечисления");
                     Advance();
+                    continue;
                 }
+
+                if (IsPunctuation("}") || IsPunctuation(";") || IsClosingParenError(Current))
+                    return;
+
+                if (Current != null && Current.Type == TokenType.Error)
+                {
+                    AddSyntaxError(
+                        Current,
+                        Current.Value,
+                        "ожидалась ',' между элементами перечисления");
+                    Advance();
+                    continue;
+                }
+
+                break;
             }
         }
 
@@ -205,10 +249,7 @@ namespace Compiler_1.Services
                 GetCurrentValueOr("}"),
                 "ожидалась '}'");
 
-            while (!IsEnd && !IsPunctuation("}"))
-                Advance();
-
-            if (IsPunctuation("}"))
+            if (Current != null && (Current.Type == TokenType.Error || (Current.Type == TokenType.Punctuation && Current.Value != ";")))
                 Advance();
         }
 
@@ -226,139 +267,66 @@ namespace Compiler_1.Services
                 GetCurrentOrSyntheticToken(),
                 GetCurrentValueOr(";"),
                 "ожидалась ';'");
-        }
 
-        // Восстановление после пропущенного enum: ищем class или имя, за которым {/;
-        private bool RecoverAfterMissingEnum()
-        {
-            while (!IsEnd)
-            {
-                SkipIgnoredTokens();
-
-                if (IsKeyword("class"))
-                    return true;
-
-                if (IsIdentifier() && (IsTerminatorAhead() || IsBraceAhead()))
-                    return true;
-
-                if (IsIdentifier() && NextLooksLikeGarbage())
-                {
-                    Advance();
-                    continue;
-                }
-
-                if (Current.Type == TokenType.Punctuation)
-                {
-                    return false;
-                }
-
+            if (Current != null && Current.Type == TokenType.Error)
                 Advance();
-            }
-
-            return false;
         }
 
-        // Восстановление, когда пропущен class: ищем class или допустимое имя перечисления
-        private void RecoverBeforeName()
-        {
-            while (!IsEnd)
-            {
-                SkipIgnoredTokens();
-
-                if (IsKeyword("class"))
-                {
-                    Advance();
-                    return;
-                }
-
-                if (IsIdentifier() && (IsBraceAhead() || IsTerminatorAhead()))
-                    return;
-
-                if (IsIdentifier() && NextLooksLikeGarbage())
-                {
-                    Advance();
-                    continue;
-                }
-
-                if (Current.Type == TokenType.Punctuation)
-                    return;
-
-                Advance();
-            }
-        }
-
-        private void SkipUntilNameOrBrace()
-        {
-            while (!IsEnd)
-            {
-                SkipIgnoredTokens();
-
-                if (IsIdentifier() || IsPunctuation("{") || IsPunctuation("}") || IsPunctuation(";"))
-                    return;
-
-                Advance();
-            }
-        }
-
-        // Быстрая эвристика: есть ли впереди хотя бы одно ключевое слово или идентификатор
         private bool HasPlausibleDeclarationAhead(int startIndex)
         {
             for (int i = startIndex; i < _tokens.Count; i++)
             {
-                var token = _tokens[i];
+                Token token = _tokens[i];
+
+                if (token.Type == TokenType.Keyword && (token.Value == "enum" || token.Value == "class"))
+                    return true;
 
                 if (token.Type == TokenType.Identifier)
                     return true;
 
-                if (token.Type == TokenType.Keyword && (token.Value == "class" || token.Value == "enum"))
+                if (token.Type == TokenType.Error && IsIdentifierLike(token.Value))
                     return true;
             }
 
             return false;
         }
 
-        // Проверяем, не похож ли следующий токен на мусор (помогает при восстановлении)
-        private bool NextLooksLikeGarbage()
+        private static string NormalizeWord(string value)
         {
-            if (IsEnd)
-                return false;
+            if (string.IsNullOrEmpty(value))
+                return string.Empty;
 
-            if (IsKeyword("class"))
-                return false;
+            var builder = new StringBuilder(value.Length);
 
-            if (IsIdentifier() && IsBraceAhead())
-                return false;
+            foreach (char ch in value)
+            {
+                if (char.IsLetterOrDigit(ch) || ch == '_')
+                    builder.Append(char.ToLowerInvariant(ch));
+            }
 
-            if (IsIdentifier() && IsTerminatorAhead())
-                return false;
-
-            if (IsIdentifier() && NextIsIdentifierOrError())
-                return true;
-
-            if (Current.Type == TokenType.Error)
-                return true;
-
-            return false;
+            return builder.ToString();
         }
 
-        private bool NextIsIdentifierOrError()
+        private static bool IsIdentifierLike(string value)
         {
-            if (Peek(1) == null)
-                return false;
-
-            return Peek(1).Type == TokenType.Identifier || Peek(1).Type == TokenType.Error;
+            return NormalizeWord(value).Length > 0;
         }
 
-        private bool IsBraceAhead()
+        private static bool IsEnumLike(string value)
         {
-            var next = Peek(1);
-            return next != null && next.Type == TokenType.Punctuation && next.Value == "{";
+            return string.Equals(NormalizeWord(value), "enum", StringComparison.Ordinal);
         }
 
-        private bool IsTerminatorAhead()
+        private static bool IsClassLike(string value)
         {
-            var next = Peek(1);
-            return next == null || (next.Type == TokenType.Punctuation && (next.Value == ";" || next.Value == "}"));
+            return string.Equals(NormalizeWord(value), "class", StringComparison.Ordinal);
+        }
+
+        private static bool IsClosingParenError(Token token)
+        {
+            return token != null &&
+                   token.Type == TokenType.Error &&
+                   token.Value == ")";
         }
 
         private Token Current => !IsEnd ? _tokens[_position] : null;
@@ -371,23 +339,24 @@ namespace Compiler_1.Services
                 _position++;
         }
 
-        private Token Peek(int offset)
-        {
-            int index = _position + offset;
-            if (index < 0 || index >= _tokens.Count)
-                return null;
-            return _tokens[index];
-        }
-
         private void SkipIgnoredTokens()
         {
-            while (!IsEnd && (Current.Type == TokenType.Error || Current.Type == TokenType.Whitespace))
+            while (!IsEnd && Current.Type == TokenType.Whitespace)
                 Advance();
         }
 
-        private bool IsKeyword(string value)
+        private bool IsEnumKeyword(Token token)
         {
-            return !IsEnd && Current.Type == TokenType.Keyword && string.Equals(Current.Value, value, StringComparison.Ordinal);
+            return token != null &&
+                   token.Type == TokenType.Keyword &&
+                   string.Equals(token.Value, "enum", StringComparison.Ordinal);
+        }
+
+        private bool IsClassKeyword(Token token)
+        {
+            return token != null &&
+                   token.Type == TokenType.Keyword &&
+                   string.Equals(token.Value, "class", StringComparison.Ordinal);
         }
 
         private bool IsIdentifier()
@@ -397,7 +366,9 @@ namespace Compiler_1.Services
 
         private bool IsPunctuation(string value)
         {
-            return !IsEnd && Current.Type == TokenType.Punctuation && Current.Value == value;
+            return !IsEnd &&
+                   Current.Type == TokenType.Punctuation &&
+                   Current.Value == value;
         }
 
         private string GetCurrentValueOr(string fallback)

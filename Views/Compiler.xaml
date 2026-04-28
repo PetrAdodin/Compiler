@@ -13,6 +13,7 @@
                 <MenuItem Header="Открыть" Click="Open_Click"/>
                 <MenuItem Header="Сохранить" Click="Save_Click"/>
                 <MenuItem Header="Сохранить как" Click="SaveAs_Click"/>
+                <MenuItem x:Name="CompilerModeCheckBox" Header="Компилятор" IsCheckable="True" IsChecked="True"/>
                 <Separator/>
                 <MenuItem Header="Выход" Click="Exit_Click"/>
             </MenuItem>

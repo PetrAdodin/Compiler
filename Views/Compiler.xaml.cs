@@ -217,6 +217,12 @@ namespace Compiler_1.Views
 
                 var parser = new CppParser(syntaxTokens);
                 var syntaxErrors = parser.Parse();
+                bool compilerModeEnabled = CompilerModeCheckBox.IsChecked == true;
+
+                if (!compilerModeEnabled && syntaxErrors.Count > 1)
+                {
+                    syntaxErrors = syntaxErrors.Take(1).ToList();
+                }
 
                 if (syntaxErrors.Count == 0)
                 {
@@ -224,9 +230,15 @@ namespace Compiler_1.Views
                     SyntaxResultTextBlock.Foreground = Brushes.Green;
                     SyntaxDataGrid.ItemsSource = null;
                 }
-                else
+                else if (compilerModeEnabled)
                 {
                     SyntaxResultTextBlock.Text = $"Обнаружено синтаксических ошибок: {syntaxErrors.Count}";
+                    SyntaxResultTextBlock.Foreground = Brushes.Red;
+                    SyntaxDataGrid.ItemsSource = syntaxErrors;
+                }
+                else
+                {
+                    SyntaxResultTextBlock.Text = "Обнаружена первая синтаксическая ошибка. Анализ остановлен.";
                     SyntaxResultTextBlock.Foreground = Brushes.Red;
                     SyntaxDataGrid.ItemsSource = syntaxErrors;
                 }
@@ -239,7 +251,7 @@ namespace Compiler_1.Views
 
         private void Report_Click(object sender, RoutedEventArgs e)
         {
-            string url = "https://example.com";
+            string url = "https://docs.google.com/document/d/1VKio5ymxA30fGAT6OOv4rxK2-qZAYbTqTZbAJoS5K8M/edit?usp=sharing";
             try
             {
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });

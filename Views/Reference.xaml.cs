@@ -14,9 +14,6 @@ using System.Windows.Shapes;
 
 namespace Compiler_1.Views
 {
-    /// <summary>
-    /// Логика взаимодействия для Reference.xaml
-    /// </summary>
     public partial class Reference : Window
     {
         public Reference()

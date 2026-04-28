@@ -5,7 +5,7 @@
         Keyword,
         Identifier,
         Punctuation,
-        Whitespace,   // пробелы, табуляции, переводы строк
+        Whitespace,
         Error
     }
 }

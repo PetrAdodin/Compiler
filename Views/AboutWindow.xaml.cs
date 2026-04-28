@@ -14,9 +14,6 @@ using System.Windows.Shapes;
 
 namespace Compiler_1.Views
 {
-    /// <summary>
-    /// Логика взаимодействия для AboutWindow.xaml
-    /// </summary>
     public partial class AboutWindow : Window
     {
         public AboutWindow()

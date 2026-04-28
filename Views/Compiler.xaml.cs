@@ -116,7 +116,7 @@ namespace Compiler_1.Views
             else
             {
                 saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                saveFileDialog.FileName = "DayEnum.rtf";
+                saveFileDialog.FileName = "NewFile.rtf";
             }
 
             if (saveFileDialog.ShowDialog() == true)
@@ -475,11 +475,11 @@ namespace Compiler_1.Views
         private void UpdateWindowTitle()
         {
             string fileName = string.IsNullOrEmpty(_currentFilePath)
-                ? "DayEnum"
+                ? "NewFile"
                 : Path.GetFileName(_currentFilePath);
 
             string modifiedMarker = _isFileModified ? "*" : "";
-            this.Title = $"Сканер enum class Day: {fileName}{modifiedMarker}";
+            this.Title = $"Компилятор: {fileName}{modifiedMarker}";
         }
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)

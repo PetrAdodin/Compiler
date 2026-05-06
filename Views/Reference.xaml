@@ -112,35 +112,7 @@
                     </TextBlock>
 
                     <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-                        <Italic>Все пункты меню "Текст" находятся в разработке.</Italic>
-                    </TextBlock>
-
-                    <TextBlock TextWrapping="Wrap" Margin="20,0,0,5" Foreground="Gray">
-                        • Постановка задачи - не реализовано
-                    </TextBlock>
-
-                    <TextBlock TextWrapping="Wrap" Margin="20,0,0,5" Foreground="Gray">
-                        • Грамматика - не реализовано
-                    </TextBlock>
-
-                    <TextBlock TextWrapping="Wrap" Margin="20,0,0,5" Foreground="Gray">
-                        • Классификация грамматики - не реализовано
-                    </TextBlock>
-
-                    <TextBlock TextWrapping="Wrap" Margin="20,0,0,5" Foreground="Gray">
-                        • Метод анализа - не реализовано
-                    </TextBlock>
-
-                    <TextBlock TextWrapping="Wrap" Margin="20,0,0,5" Foreground="Gray">
-                        • Тестовый пример - не реализовано
-                    </TextBlock>
-
-                    <TextBlock TextWrapping="Wrap" Margin="20,0,0,5" Foreground="Gray">
-                        • Список литературы - не реализовано
-                    </TextBlock>
-
-                    <TextBlock TextWrapping="Wrap" Margin="20,0,0,5" Foreground="Gray">
-                        • Исходный код программы - не реализовано
+                        <Bold>Отчет</Bold> Открывает отчет в браузере.
                     </TextBlock>
                 </StackPanel>
             </Border>
@@ -188,8 +160,8 @@
                         <Bold>Вызов справки</Bold> (иконка "Вопрос") - открывает данное окно справки.
                     </TextBlock>
 
-                    <TextBlock TextWrapping="Wrap" Margin="20,0,0,5" Foreground="Gray">
-                        <Italic>Пуск (иконка "Play") и О программе (иконка "Восклицательный знак") - в разработке</Italic>
+                    <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
+                        <Bold>Пуск</Bold> Запустить анализ текста.
                     </TextBlock>
                 </StackPanel>
             </Border>

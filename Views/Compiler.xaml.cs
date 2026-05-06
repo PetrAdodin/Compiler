@@ -10,6 +10,7 @@ using System.Linq;
 using System.Windows.Media;
 using System;
 using System.Diagnostics;
+using System.Windows.Data;
 
 namespace Compiler_1.Views
 {
@@ -154,32 +155,23 @@ namespace Compiler_1.Views
 
         private void Reference_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show(
-                "Сканер распознает лексемы из объявления enum class Day:\n\n" +
-                "Ключевые слова: enum, class\n" +
-                "Идентификаторы: Day, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday\n" +
-                "Операторы: {, }, ,, ;\n\n" +
-                "Коды лексем:\n" +
-                "1 - ключевое слово\n" +
-                "2 - идентификатор\n" +
-                "3 - оператор/пунктуация\n" +
-                "4 - разделитель (пробел)\n" +
-                "99 - ошибка",
-                "Справка",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            var Ref = new Reference();
+            Ref.Show();
         }
 
         private void About_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show(
-                "Сканер лексем для enum class Day\n" +
-                "Версия 1.0\n\n" +
-                "Разработано для распознавания конструкции:\n" +
-                "enum class Day { Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday };",
-                "О программе",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            var About = new AboutWindow();
+            About.Show();
+
+            //MessageBox.Show(
+            //    "Сканер лексем для enum class Day\n" +
+            //    "Версия 1.0\n\n" +
+            //    "Разработано для распознавания конструкции:\n" +
+            //    "enum class Day { Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday };",
+            //    "О программе",
+            //    MessageBoxButton.OK,
+            //    MessageBoxImage.Information);
         }
 
         private void Run_Click(object sender, RoutedEventArgs e)
